@@ -1,4 +1,7 @@
-/data/DanNet/dummies.csv
+/data/DanNet/
+/data/word2vec/
+/data/hum_anno/reduced_rf.txt
+/data/hum_anno/temp_annos.txt
+/data/hum_anno/temp_annos1.txt
 /venv/
 /var/*
-/data/*
