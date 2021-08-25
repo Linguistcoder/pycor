@@ -1,5 +1,6 @@
 import pandas as pd
 
+from pycor.config import Config
 from pycor.DanNet.dan_utils import expand_synsets
 from pycor.DanNet.dannet import DanNet, Synset
 from pycor.utils.save_load import save_obj
@@ -8,10 +9,10 @@ from pycor.utils.save_load import save_obj
 def create_dataframe():
     """Return DanNet as pd.DataFrame. The tables have been outer joined."""
     # Load data from DanNet
-    file_words = 'data/DanNet/words.csv'
-    file_wordsense = 'data/DanNet/wordsenses.csv'
-    file_synsets = 'data/DanNet/synsets.csv'
-    file_relations = 'data/DanNet/relations.csv'
+    file_words = Config.DanNet_PATH + '/words.csv'
+    file_wordsense = Config.DanNet_PATH + '/wordsenses.csv'
+    file_synsets = Config.DanNet_PATH + '/synsets.csv'
+    file_relations = Config.DanNet_PATH + '/relations.csv'
 
     words = pd.read_csv(file_words,
                         sep='@',

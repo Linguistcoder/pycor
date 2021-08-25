@@ -1,15 +1,16 @@
 from gensim.models import KeyedVectors
 import numpy as np
 
+from pycor.config import Config
+from pycor.utils.preprocess import remove_special_char, remove_stopwords
 
 #model_path = 'data/word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model'
 #word2vec = Word2Vec.load(model_path).wv
-from pycor.utils.preprocess import remove_special_char, remove_stopwords
 
 print('Loading word2vec model')
-model_path = 'data/word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors'
+model_path = Config.word2vec_PATH
 word2vec = KeyedVectors.load_word2vec_format(model_path,
-                                             fvocab='data/word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors.vocab',
+                                             fvocab=Config.word2vec_PATH + '.vocab',
                                              binary=False,
                                              limit=1000000)
 print('Loaded word2vec model')
