@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 import plotly.express as px
 
+from pycor.config import Config
 from pycor.visualisation.get_representation import get_2d_representation_from_lemma
 
 colorscales = px.colors.named_colorscales()
@@ -19,7 +20,7 @@ def plotly_senses(lemma, wcl, scale, n_sim):
                                      y=senses[:, 1].reshape(-1),
                                      mode='markers',
                                      marker=dict(size=[s * 2 + 4 if s != 0 else 6 for s in scores],
-                                                 #color=[i * 0 if i == 1 else i for i in lengths],
+                                                 # color=[i * 0 if i == 1 else i for i in lengths],
                                                  color=ddo_sense,
                                                  colorscale=scale,
                                                  cmin=1),
@@ -59,7 +60,8 @@ app.layout = html.Div([
     dcc.Graph(id="graph"),
 ])
 
-#if __name__ == "__main__":
+
+# if __name__ == "__main__":
 #    app.run_server(debug=True)
 
 
@@ -69,11 +71,10 @@ app.layout = html.Div([
     Input("lemma", "value"),
     Input("ordklasse", "value"),
     Input("n_sim", "value"),
-    )
-
+)
 def change_colorscale(scale, lemma, ordklasse, n_sim):
     fig = plotly_senses(lemma=lemma, wcl=ordklasse, scale=scale, n_sim=n_sim)
     return fig
 
 
-app.run_server(debug=False)
+app.run_server(debug=Config.DEBUG)
