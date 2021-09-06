@@ -46,7 +46,7 @@ def change_colorscale(scale, lemma, ordklasse):
     data, labels = get_representations_from_lemma(lemma, ordklasse)
     matrix = get_cosine_matrix(data, labels)
 
-    fig = px.imshow(matrix, color_continuous_scale=scale)
+    fig = px.imshow(matrix, color_continuous_scale=scale, zmin=0, zmax=1)
 
     return fig
 
