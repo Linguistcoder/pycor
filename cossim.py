@@ -1,20 +1,15 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import plotly.graph_objects as go
-from dash.dependencies import Input, Output
 import plotly.express as px
+from dash.dependencies import Input, Output
 
 from pycor.config import Config
-from pycor.visualisation.get_representation import get_2d_representation_from_lemma
+from pycor.visualisation.cosine_repr import get_representations_from_lemma, get_cosine_matrix
 
 colorscales = px.colors.named_colorscales()
 
-
 # fig.show()
-
-def plotly_cossim(lemma, wcl, scale):
-    pass
 
 app = dash.Dash(__name__)
 
@@ -48,7 +43,11 @@ app.layout = html.Div([
     Input("ordklasse", "value"),
 )
 def change_colorscale(scale, lemma, ordklasse):
-    fig = plotly_cossim(lemma=lemma, wcl=ordklasse, scale=scale)
+    data, labels = get_representations_from_lemma(lemma, ordklasse)
+    matrix = get_cosine_matrix(data, labels)
+
+    fig = px.imshow(matrix, color_continuous_scale=scale)
+
     return fig
 
 

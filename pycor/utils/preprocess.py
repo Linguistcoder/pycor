@@ -1,6 +1,6 @@
 import re
 import nltk
-nltk.download('stopwords')
+#nltk.download('stopwords')
 
 stopwords = set(nltk.corpus.stopwords.words('danish'))
 
