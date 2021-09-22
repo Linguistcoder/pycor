@@ -8,7 +8,7 @@ class Config(object):
     TESTING = False
     DanNet_PATH = 'N:/HUM-NORS-cst-projekter/COR/data_modeller/DanNet'
     word2vec_PATH = 'N:/HUM-NORS-cst-projekter/COR/data_modeller/word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors'
-
+    #word2vec_PATH = 'C:/Users/nmp828/Documents/pycor/data/dsl_skipgram_2020_m5_f500_epoch2_w5.model'
 
 class ProductionConfig(Config):
     pass

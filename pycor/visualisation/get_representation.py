@@ -4,7 +4,8 @@ from sklearn.decomposition import PCA
 
 from pycor.load_annotations.load_anno2 import lemma_groups as ANNO
 from pycor.models.word2vec import word2vec_embed, word2vec_tokenizer, word2vec
-from pycor.visualisation.utils import get_main_sense, clean_wcl, vectorize
+from pycor.utils.preprocess import clean_wcl
+from pycor.utils.vectors import vectorize
 
 
 def reduce_dim(X, n_dim=2):
