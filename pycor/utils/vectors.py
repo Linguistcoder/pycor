@@ -1,4 +1,6 @@
 from pycor.models.word2vec import word2vec_tokenizer, word2vec_embed
+from scipy.spatial.distance import cosine
+import numpy as np
 
 def vectorize(row, infotypes=['def']):
     sentence = [row.lemma]
@@ -38,3 +40,22 @@ def vectorize(row, infotypes=['def']):
     vector = word2vec_embed(sentence)
 
     return vector
+
+
+def vectorize_rows(row):
+    vector1 = word2vec_embed(word2vec_tokenizer(row.sentence_1))
+    vector2 = word2vec_embed(word2vec_tokenizer(row.sentence_2))
+
+    concatted = np.concatenate((vector1, vector2), axis=None)
+
+    if concatted.shape == (1000,):
+        return concatted
+    else:
+        return np.zeros((1000,)) + 0.00001
+
+
+def vectorize_and_cosine(row):
+    vector1 = word2vec_embed(word2vec_tokenizer(row.sentence_1))
+    vector2 = word2vec_embed(word2vec_tokenizer(row.sentence_2))
+
+    return cosine(vector1, vector2)

@@ -10,9 +10,8 @@ from pycor.utils.preprocess import remove_special_char, remove_stopwords
 print('Loading word2vec model')
 model_path = Config.word2vec_PATH
 word2vec = KeyedVectors.load_word2vec_format(model_path,
-                                             #fvocab=Config.word2vec_PATH + '.vocab',
-                                             binary=False,
-                                             limit=1000000)
+                                             fvocab=Config.word2vec_PATH + '.vocab',
+                                             binary=False)
 print('Loaded word2vec model')
 
 def word2vec_tokenizer(sentence):

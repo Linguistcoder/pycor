@@ -7,25 +7,36 @@ import pandas as pd
 #                   na_values=['n', ' '])
 
 
-anno = pd.read_csv('data/hum_anno/13_09_2021.txt',
+anno = pd.read_csv('data/hum_anno/15_12_2021.txt',
                    sep='\t',
                    encoding='utf-8',
                    na_values=['n', ' '])
-anno = anno.dropna(subset=['score', 'ddo_lemma', 'COR-bet.inventar'])
 
-citater = pd.read_csv('H:/CST_COR/data/ddo_citater_cbc.csv',
+citater = pd.read_csv('data/citat/citater_ren.tsv',
                       sep='\t',
-                      encoding='utf-8')
+                      encoding='utf-8',
+                      usecols=['ddo_dannetsemid', 'citat'])
+
+
+anno = anno.dropna(subset=['ddo_lemma', 'COR-bet.inventar', 'ddo_dannetsemid'])
+anno['ddo_dannetsemid'] = anno['ddo_dannetsemid'].astype('int64')
+
 citater = citater.groupby('ddo_dannetsemid').aggregate(' '.join)
 
-anno['ddo_dannetsemid'] = anno['ddo_dannetsemid'].astype('int64')
-anno = anno.merge(citater, how='outer', on='ddo_dannetsemid')
-anno = anno.dropna(subset=['score', 'ddo_lemma', 'COR-bet.inventar'])
+anno = anno.merge(citater, how='outer', on=['ddo_dannetsemid'])
+anno = anno.dropna(subset=['ddo_lemma', 'COR-bet.inventar', 'ddo_dannetsemid', 'ddo_betyd_nr'])
 
-anno = anno.loc[:, ['score', 'ddo_lemma', 'ddo_ordklasse', 'ddo_definition', 'ddo_genprox', 'ddo_kollokation',
+anno.ddo_konbet = anno.ddo_konbet.fillna('').astype(str)
+anno.ddo_encykl = anno.ddo_encykl.fillna('').astype(str)
+anno.ddo_definition = anno.ddo_definition.fillna('').astype(str)
+
+anno.ddo_definition = anno[['ddo_definition', 'ddo_konbet', 'ddo_encykl']].aggregate(' '.join, axis=1)
+
+
+anno = anno.loc[:, ['score', 'ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition', 'ddo_genprox', 'ddo_kollokation',
                     'dn_hyper', 'COR-bet.inventar', 'dn_id', 'ddo_betyd_nr', 'citat']]
 
-anno.columns = ['score', 'lemma', 'ordklasse', 'definition', 'genprox', 'kollokation',
+anno.columns = ['score', 'lemma', 'ordklasse', 'homnr', 'definition', 'genprox', 'kollokation',
                 'hyper', 'cor', 'dn_id', 'ddo_bet', 'citat']
 
 

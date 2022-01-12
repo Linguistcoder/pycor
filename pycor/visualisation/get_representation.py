@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 
 from pycor.load_annotations.load_anno2 import lemma_groups as ANNO
 from pycor.models.word2vec import word2vec_embed, word2vec_tokenizer, word2vec
-from pycor.utils.preprocess import clean_wcl
+from pycor.utils.preprocess import clean_wcl, get_main_sense
 from pycor.utils.vectors import vectorize
 
 
@@ -21,7 +21,7 @@ def get_representation_for_lemma(lemma, wcl, lemma_groups, n_sim=1):
 
     data = []
     for row in group.itertuples():
-        vector = vectorize(row)
+        vector = vectorize(row, infotypes=['def', 'citat'])
         if type(vector) != float:
             data.append({'sense': row.ddo_bet,
                          'embedding': vector,

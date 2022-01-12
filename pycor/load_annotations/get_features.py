@@ -45,7 +45,11 @@ anno.columns = ['lemma', 'ordklasse', 'definition', 'genprox', 'kollokation', 'c
 
 
 def create_dataset(annotations, infotypes=['def']):
-    dataset = [['lemma', 'bet_1', 'bet_2', 'cosine', 'onto', 'frame', 'score', 'main_sense', 'figurative', 'label']]
+    dataset = [['lemma', 'ordklasse',
+                'bet_1', 'bet_2', 'cosine',
+                'onto', 'frame', 'score', 'main_sense',
+                'figurative', 'label']]
+
     for name, group in annotations.groupby(['lemma', 'ordklasse']):
         groupset = []
         #if len(group.index) > 5:
@@ -53,6 +57,7 @@ def create_dataset(annotations, infotypes=['def']):
         for row in group.itertuples():
             figurative = row.bemaerk if type(row.bemaerk) != float else ''
             instance = DataInstance(lemma=row.lemma,
+                                    wcl=row.ordklasse,
                                     cor=row.cor,
                                     ddo_bet=row.ddo_nr,
                                     vector=vectorize(row, infotypes=infotypes),
@@ -65,15 +70,18 @@ def create_dataset(annotations, infotypes=['def']):
 
         for indx, sam1 in enumerate(groupset):
             for sam2 in groupset[indx + 1:]:
+                onto_len = len(sam1.onto.intersection(sam2.onto))
+                frame_len = len(sam1.frame.intersection(sam2.frame))
+
                 cosine_sim = cosine(sam1.vector, sam2.vector)
-                onto_sim = len(sam1.onto.intersection(sam2.onto))
-                frame_sim = len(sam1.frame.intersection(sam2.frame))
+                onto_sim = 2 if onto_len == len(sam1.onto) else 1 if onto_len >= 1 else 0
+                frame_sim = 2 if frame_len == len(sam1.frame) else 1 if frame_len >= 1 else 0
                 score_dis = np.abs(sam1.score - sam2.score)
                 same_main = 1 if sam1.main_sense == sam2.main_sense else 0
                 both_fig = get_fig_value(sam1.figurative, sam2.figurative)
                 label = 1 if sam1.cor == sam2.cor else 0
 
-                dataset.append([sam1.lemma, sam1.ddo_bet, sam2.ddo_bet,
+                dataset.append([sam1.lemma, sam1.wcl, sam1.ddo_bet, sam2.ddo_bet,
                                 cosine_sim, onto_sim, frame_sim, score_dis,
                                 same_main, both_fig, label])
 

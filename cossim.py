@@ -8,7 +8,7 @@ from pycor.config import Config
 from pycor.visualisation.cosine_repr import get_representations_from_lemma, get_cosine_matrix
 
 colorscales = px.colors.named_colorscales()
-infos = ['def', 'genprox', 'citat', 'kollokation']
+infos = ['def', 'citat']
 # fig.show()
 
 app = dash.Dash(__name__)

@@ -45,8 +45,8 @@ def create_dataset(annotations, infotypes=['def']):
     dataset = [['lemma','bet_1', 'bet_2', 'score', 'label']]
     for name, group in annotations.groupby(['lemma', 'ordklasse']):
         groupset = []
-        if len(group.index) > 5:
-            continue
+        #if len(group.index) > 5:
+            #continue
         for row in group.itertuples():
             vector = vectorize(row, infotypes=infotypes)
             groupset.append((vector, row.cor, row.lemma, row.ddo_nr))
