@@ -3,7 +3,8 @@ import random
 from collections import namedtuple
 
 from pycor.utils import preprocess
-#
+
+
 # anno = pd.read_csv('data/hum_anno/15_12_2021.txt',
 #                    sep='\t',
 #                    encoding='utf-8',
@@ -25,7 +26,7 @@ citater = pd.read_csv('H:/CST_COR/data/DDO_citater/citater_mellemfrekvente.tsv',
 
 anno = anno.dropna(subset=['ddo_lemma', 'COR-bet.inventar', 'ddo_dannetsemid'])
 anno['ddo_dannetsemid'] = anno['ddo_dannetsemid'].astype('int64')
-#anno.merge(citater,
+# anno.merge(citater,
 #           how='outer',
 #           on='ddo_dannetsemid'
 #           ).loc[:, ['ddo_dannetsemid', 'ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'citat']].to_csv('var/citater.tsv',
@@ -42,7 +43,7 @@ citater = citater.groupby('ddo_dannetsemid').aggregate('||'.join)
 #            'ddo_art_doks', 'ddo_udvalg', 'dn_id', 'dn_lemma', 'ddo_sublemma', 'ddo_konbet',	'ddo_encykl',
 #            'ro_glosse', 'ro_opslag/afvig', 'ddo_morf']
 
-#anno = anno.dropna(subset=['score', 'ddo_lemma', 'COR-bet.inventar'])
+# anno = anno.dropna(subset=['score', 'ddo_lemma', 'COR-bet.inventar'])
 anno = anno[anno['COR-bet.inventar'] != '0']
 
 anno = anno.merge(citater, how='outer', on=['ddo_dannetsemid'])
@@ -54,7 +55,7 @@ anno.ddo_definition = anno.ddo_definition.fillna('').astype(str)
 
 anno.ddo_definition = anno[['ddo_definition', 'ddo_konbet', 'ddo_encykl']].aggregate(' '.join, axis=1)
 
-#anno = anno.dropna(subset=['score', 'ddo_lemma', 'COR-bet.inventar'])
+# anno = anno.dropna(subset=['score', 'ddo_lemma', 'COR-bet.inventar'])
 
 # reduced_anno = anno.loc[:, ['ddo_entryid', 'ddo_dannetsemid', 'ddo_lemma', 'ddo_betyd_nr', 'ddo_definition', 'citat']]
 # reduced_anno[reduced_anno.citat.isna()].to_csv(r'C:\Users\nmp828\Documents\pycor\var\mangler_citat.tsv',
@@ -74,6 +75,7 @@ anno = anno.loc[:, ['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition',
 
 anno.columns = ['lemma', 'ordklasse', 'homnr', 'definition', 'genprox', 'kollokation', 'cor', 'dn_id', 'ddo_nr',
                 'citat', 'bemaerk', 'onto1', 'onto2', 'hyper', 'frame', 'konbet', 'encykl']
+
 
 # DanNet = load_obj('DanNet')
 # DanNet = expand_synsets(expand_synsets(DanNet), s=False)
@@ -95,7 +97,8 @@ def create_dataset(annotations, words='all', sents='all', limit=0):
     lemmas = []
     dataset = []
 
-    instance = namedtuple('instance', ['target', 'target_sentence', 'sense_quotes', 'sense_labels', 'label_index', 'wcl'])
+    instance = namedtuple('instance',
+                          ['target', 'target_sentence', 'sense_quotes', 'sense_labels', 'label_index', 'wcl'])
     print(f"Number of lemmas: {annotations.groupby(['lemma', 'ordklasse', 'homnr']).ngroups}")
 
     for name, group in annotations.groupby(['lemma', 'ordklasse', 'homnr']):
@@ -121,8 +124,8 @@ def create_dataset(annotations, words='all', sents='all', limit=0):
                 if type(row.citat) != float:
                     citats = [row.citat] if '||' not in row.citat else row.citat.split('||')
                     examples[f'COR_{row.cor}'] += citats
-                #else:
-                    #print(f'Missing citat for {lemma}: {row.definition}')
+                # else:
+                # print(f'Missing citat for {lemma}: {row.definition}')
 
         if sents == 'all' or sents == 'def':
             sen_count1 += len(definitions)
@@ -179,8 +182,6 @@ def create_dataset(annotations, words='all', sents='all', limit=0):
         lemma_count += 1
         lemmas.append((lemma, wcl))
 
-
-
     print(f'Number of monosemic lemmas: {monosema}')
     print(f'Number of lemmas: {lemma_count}')
     print(f'Number of senses: {sen_count1}')
@@ -189,6 +190,7 @@ def create_dataset(annotations, words='all', sents='all', limit=0):
     print(f'Number of verbs: {vb}')
     print(f'Number of adjectives: {adj}')
     return pd.DataFrame(dataset)
+
 
 def create_dataset2(annotations, words='all', sents='all', limit=0):
     # each training instance contains a
@@ -215,7 +217,6 @@ def create_dataset2(annotations, words='all', sents='all', limit=0):
         if words != 'all' and words not in wcl:
             continue
 
-
         hom_nr = name[2]
         senses = list(group.ddo_nr.values)
 
@@ -234,7 +235,7 @@ def create_dataset2(annotations, words='all', sents='all', limit=0):
             sen_count2 += len(ddo_citat)
 
         else:
-            sen_count1 += len(senses) #len(ddo_citat)
+            sen_count1 += len(senses)  # len(ddo_citat)
 
             if len(senses) <= 1:
                 continue
@@ -246,24 +247,41 @@ def create_dataset2(annotations, words='all', sents='all', limit=0):
         vb += 1 if 'vb' in wcl else 0
         lemma_count += 1
 
-        sense_pairs = [(sens, sens2) for index, sens in enumerate(senses[:-1]) for sens2 in senses[index+1:]]
+        sense_pairs = set([frozenset((sens, sens2))
+                           for index, sens in enumerate(senses[:-1]) for sens2 in senses[index + 1:]])
+        sense_pairs = [pair for pair in sense_pairs if len(pair)>1]
+        try:
+            for sense, sense2 in sense_pairs:
+                sentence_1 = ddo_definitions[sense] + ddo_citat.get(sense, [])
+                sentence_1 = ' '.join(sentence_1)
+                sentence_2 = ddo_definitions[sense2] + ddo_citat.get(sense2, [])
+                sentence_2 = ' '.join(sentence_2)
 
-        for sense, sense2 in sense_pairs:
-            sentences = []
-            if sents == 'def' or sents == 'all':
-                sentences += ddo_definitions[sense2]
-            if sents == 'exam' or sents == 'all':
-                sentences += ddo_citat.get(sense2, [])
+                # sentences = []
+                # if sents == 'def' or sents == 'all':
+                #     sentences += ddo_definitions[sense2]
+                # if sents == 'exam' or sents == 'all':
+                #    sentences += ddo_citat.get(sense2, [])
 
-            for sentence in sentences:
                 dataset.append(instance(lemma=lemma,
                                         ordklasse=wcl,
                                         homnr=hom_nr,
                                         bet_1=sense2,
                                         bet_2=sense,
-                                        sentence_1=sentence,
-                                        sentence_2=ddo_definitions[sense][0],
+                                        sentence_1=sentence_1,
+                                        sentence_2=sentence_2,
                                         label=1 if ddo2cor[sense] == ddo2cor[sense2] else 0))
+        except:
+            print(sense_pairs)
+            # for sentence in sentences:
+            # dataset.append(instance(lemma=lemma,
+            #                         ordklasse=wcl,
+            #                         homnr=hom_nr,
+            #                         bet_1=sense2,
+            #                         bet_2=sense,
+            #                         sentence_1=sentence,
+            #                         sentence_2=ddo_definitions[sense][0],
+            #                         label=1 if ddo2cor[sense] == ddo2cor[sense2] else 0))
 
     print(f'Number of lemmas: {lemma_count}')
     print(f'Number of senses: {sen_count1}')
@@ -274,8 +292,9 @@ def create_dataset2(annotations, words='all', sents='all', limit=0):
 
     return pd.DataFrame(dataset)
 
-bert_data = create_dataset(anno, words='sb', sents='all', limit=0)
-bert_data.to_csv('var\BERT_dataset_mellemfrekv_sb.tsv', sep='\t', encoding='utf8')
 
-bert_data = create_dataset2(anno, words='sb', sents='all', limit=0)
-bert_data.to_csv(r'var\reduction_dataset_mellemfrek_sb.tsv', sep='\t', encoding='utf8')
+#bert_data = create_dataset(anno, words='sb', sents='all', limit=0)
+#bert_data.to_csv('var\BERT_dataset_mellemfrekv_sb.tsv', sep='\t', encoding='utf8')
+
+bert_data = create_dataset2(anno, words='all', sents='all', limit=5)
+bert_data.to_csv(r'var\reduction_dataset_word2vec_mellem.tsv', sep='\t', encoding='utf8')

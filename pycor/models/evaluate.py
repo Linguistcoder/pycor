@@ -1,6 +1,6 @@
 import pandas as pd
 
-Select = 'mellemfrek_3'  # "('80_10_l',) (1)"#'80_10_l' #'80_10_2-3'
+Select = '10_2' # "('80_10_l',) (1)"#'80_10_l' #'80_10_2-3'
 # Select = 'C-D-E'
 # Select = 'F'
 # Select = 'G-H'
@@ -10,15 +10,7 @@ Select = 'mellemfrek_3'  # "('80_10_l',) (1)"#'80_10_l' #'80_10_2-3'
 
 clusters = pd.read_csv(f'../../var/clusters_{Select}.tsv', sep='\t')
 
-# annotated = pd.read_csv('../../data/hum_anno/15_12_2021.txt',
-#                         sep='\t',
-#                         encoding='utf-8',
-#                         na_values=['n', ' '],
-#                         usecols=['ddo_entryid', 'ddo_lemma', 'ddo_homnr',
-#                                  'ddo_ordklasse', 'ddo_betyd_nr', 'COR-bet.inventar'
-#                                  ]
-#                         )
-annotated = pd.read_csv('../../data/hum_anno/mellemfrekvente.txt',
+annotated = pd.read_csv('../../data/hum_anno/15_12_2021.txt',
                         sep='\t',
                         encoding='utf-8',
                         na_values=['n', ' '],
@@ -26,11 +18,19 @@ annotated = pd.read_csv('../../data/hum_anno/mellemfrekvente.txt',
                                  'ddo_ordklasse', 'ddo_betyd_nr', 'COR-bet.inventar'
                                  ]
                         )
+# annotated = pd.read_csv('../../data/hum_anno/mellemfrekvente.txt',
+#                         sep='\t',
+#                         encoding='utf-8',
+#                         na_values=['n', ' '],
+#                         usecols=['ddo_entryid', 'ddo_lemma', 'ddo_homnr',
+#                                  'ddo_ordklasse', 'ddo_betyd_nr', 'COR-bet.inventar'
+#                                  ]
+#                         )
 annotated = annotated.dropna(subset=['ddo_lemma', 'COR-bet.inventar'])
 
-#annotated.columns = ['entryid', 'lemma', 'wcl', 'DDO', 'COR', 'homnr']
+annotated.columns = ['entryid', 'lemma', 'wcl', 'DDO', 'COR', 'homnr']
 # uncomment if mellemfrekvent
-annotated.columns = ['entryid', 'lemma', 'homnr', 'DDO', 'wcl', 'COR' ]
+#annotated.columns = ['entryid', 'lemma', 'homnr', 'DDO', 'wcl', 'COR' ]
 
 annotated['homnr'] = annotated['homnr'].astype('int64')
 clusters['homnr'] = clusters['homnr'].astype('int64')

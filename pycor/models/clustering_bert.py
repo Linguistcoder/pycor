@@ -2,20 +2,25 @@ import pandas as pd
 import numpy as np
 from collections import namedtuple
 import plotly.express as px
-
+from sklearn.metrics import f1_score
 from sklearn.preprocessing import MinMaxScaler
 
-Select = 'mellemfrek_3' #"('80_10_l',) (1)"  # '80_10_l3' #'(_test_sb_20_,)'
+Select = '10_2' #"('80_10_l',) (1)"  # '80_10_l3' #'(_test_sb_20_,)'
 
 dataset = pd.read_csv(f'../../data/bert/reduction_score_{Select}.tsv', sep='\t', encoding='utf8')
 
-dataset = dataset[dataset['ordklasse'] == 'adj.']
+#dataset = dataset[dataset['ordklasse'] == 'sb.']
 
 # dataset.score[dataset.score < 0] = 0
 score = dataset.score.values.reshape(-1, 1)
 # normalize data
-dataset.score = MinMaxScaler().fit_transform(score)
+#dataset.score = MinMaxScaler().fit_transform(score)
+#dataset.score = dataset.score.apply(lambda x: 1 if x >= 0 else 0)
 
+dataset['pred'] = dataset.apply(lambda x: 1 if x.score>0.5 else 0, axis=1)
+dataset['acc'] = dataset.apply(lambda x: 1 if x.pred == x.label else 0, axis=1)
+print(f1_score(dataset['label'], dataset['pred']))
+print(dataset['acc'].mean())
 data = dataset.groupby(['lemma', 'ordklasse', 'homnr', 'bet_1', 'bet_2']).aggregate({'homnr': 'mean',
                                                                                      'label': 'mean',
                                                                                      'score': 'mean'})
@@ -24,7 +29,7 @@ fig = px.histogram(dataset, x='score', color='label',
                    marginal="box",  # or violin, rug
                    hover_data=dataset.columns
                    )
-fig.show()
+#fig.show()
 
 Pair = namedtuple('Pair', ['bets', 'distance', 'label'])
 

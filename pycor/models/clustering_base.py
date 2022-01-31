@@ -6,26 +6,24 @@ from sklearn.metrics import f1_score
 
 from sklearn.preprocessing import MinMaxScaler
 
-Select = "word2vec_mellem"
+Select = 'pred_10_2'
 
-dataset = pd.read_csv(f'../../data/word2vec/reduction_score_{Select}.tsv', sep='\t', encoding='utf8')
+dataset = pd.read_csv(f'../../var/feature_dataset_{Select}.tsv', sep='\t', encoding='utf8')
 
-#dataset = dataset[dataset['ordklasse'] == 'adj.']
-dataset['pred'] = dataset.apply(lambda x: 1 if x.score < 0.17 else 0, axis=1)
+dataset = dataset[dataset['ordklasse'] == 'sb.']
+
+#dataset['pred'] = dataset.apply(lambda x: 1 if x.score==1 else 0, axis=1)
 dataset['acc'] = dataset.apply(lambda x: 1 if x.pred == x.label else 0, axis=1)
-
 print(f1_score(dataset['label'], dataset['pred']))
 print(dataset['acc'].mean())
 
-score = dataset.score.values.reshape(-1, 1)
-# normalize data
-#dataset.score = MinMaxScaler().fit_transform(score)
+# dataset.score[dataset.score < 0] = 0
 
-fig = px.histogram(dataset, x='score', color='label',
+fig = px.histogram(dataset, x='pred', color='label',
                    marginal="box",  # or violin, rug
                    hover_data=dataset.columns
                    )
-fig.show()
+#fig.show()
 
 Pair = namedtuple('Pair', ['bets', 'distance', 'label'])
 
@@ -70,7 +68,7 @@ def merge(clusters, inv_clusters, pair, uniq_pairs):
     elif bet_1 not in inv_clusters and bet_2 not in inv_clusters:
         clusters[COR] = list(pair.bets)
         COR += 1
-    elif set(pair.bets) in uniq_pairs and pair.distance < 0.15:
+    elif set(pair.bets) in uniq_pairs and pair.distance > 0.87:
         if pair.label != 1:
             print('NOT merge:', pair.distance)
 
@@ -99,7 +97,7 @@ def split(clusters, inv_clusters, pair, uniq_pairs):
     elif bet_1 not in inv_clusters and bet_2 not in inv_clusters:
         clusters[COR] = [bet_1]
         clusters[COR + 1] = [bet_2]
-    elif set(pair.bets) in uniq_pairs and pair.distance >= 0.45:
+    elif set(pair.bets) in uniq_pairs and pair.distance <= 0.05:
         if pair.label != 0:
             print('NOT split:', pair.distance)
         if inv_clusters[bet_1] == inv_clusters[bet_2]:
@@ -113,60 +111,48 @@ def split(clusters, inv_clusters, pair, uniq_pairs):
 
 def do_clustering(data: pd.DataFrame, wcl='[]'):
     all_clusters = {}
-    uncertain = {}
-    # pairs = []
     devel = [['lemma', 'mean', 'std_dv', 'min_mean', 'max_mean', 'type']]
 
     for name, group in data.groupby(['lemma', 'ordklasse', 'homnr']):
         lemma = name[0].lower()
         wcl = name[1].lower()
-        COR = 1
-        clusters = {}
-        pairs = [Pair(bets=(row.bet_1, row.bet_2),
-                      distance=row.score,
-                      label=row.label) for row in group.itertuples()
-                 # for name, group in group.groupby(['bet_1', 'bet_2'])
-                 ]
-        uniq_pairs = set([frozenset(pair.bets) for pair in pairs])
 
-        # group = group.groupby(['bet_1', 'bet_2']).aggregate({'homnr': 'mean',
-        #                                                     'label': 'mean',
-        #                                                     'score': lambda x: x.iloc[0]})
+        clusters = {}
+
+        pairs = [Pair(bets=(row.bet_1, row.bet_2),
+                      distance=row.pred,
+                      label=row.label) for row in group.itertuples()
+                 ]
+
+        uniq_pairs = set([frozenset(pair.bets) for pair in pairs])
 
         if len(uniq_pairs) == 1:
             distance = np.mean([pair.distance for pair in pairs])
-            if distance > 0.17:
+            if distance == 0:
                 if pairs[0].label != 0:
                     print('should not split', lemma, distance)
                 clusters[1] = [pairs[0].bets[0]]
                 clusters[2] = [pairs[0].bets[1]]
-            elif distance <= 0.17:
+            elif distance == 1:
                 if pairs[0].label != 1:
                     print('should not merge', lemma, distance)
                 clusters[1] = list(pairs[0].bets)
 
-            # else:
-        #             uncertain[name] = (pair.bets[0], pair.bets[1], pair.distance, pair.label)
+            else:
+                print('no cat:', lemma, distance)
 
         else:
-            std_dv = group['score'].std()
-            mean = group['score'].mean()
+            std_dv = group['pred'].std()
+            mean = group['pred'].mean()
 
-            min_mean, max_mean, minimums, maximums = get_group_means(group['score'])
-            pairs.sort(key=lambda x: 1 + x.distance
-            if x.distance >= 0.5 else 1 - x.distance + 0.5
-            if x.distance <= 0.2 else x.distance,
-                       reverse=True)
-            # pairs.sort(key=lambda x: x.distance)
-            if group['label'].mean() == 1:
-                print()
+            min_mean, max_mean, minimums, maximums = get_group_means(group['pred'])
 
-            if (max_mean - min_mean) <= 0.2 and max_mean >= 0.40 or min_mean > 0.4:
-                # print('removes a CATEGORY', lemma)
+            if (max_mean - min_mean) <= 0.2 and max_mean >= 0.8:
+                print('removes a CATEGORY', lemma)
                 maximums += minimums
                 minimums = []
 
-            if (max_mean - min_mean) <= 0.2 and max_mean <= 0.2:
+            if (max_mean - min_mean) <= 0.2 and max_mean <= 0.1:
                 minimums += maximums
                 maximums = []
 
@@ -176,27 +162,15 @@ def do_clustering(data: pd.DataFrame, wcl='[]'):
 
                 inv_clusters = {bet: key for key, val in clusters.items() for bet in val}
 
-                if pair.distance <= 0.2:
+                if pair.distance == 1:
                     clusters = merge(clusters, inv_clusters, pair, uniq_pairs)
 
-                elif pair.distance >= 0.4:  # 0.6
+                elif pair.distance == 0: #0.6
                     clusters = split(clusters, inv_clusters, pair, uniq_pairs)
 
-                else:
-                    if pair.distance in minimums:
-                        clusters = merge(clusters, inv_clusters, pair, uniq_pairs)
-
-                    elif pair.distance in maximums:
-                        clusters = split(clusters, inv_clusters, pair, uniq_pairs)
-
                 uniq_pairs.discard(frozenset(pair.bets))
-            # steps
-            # 1 - sort pairs
-            # 2 - assign
 
             lab_type = get_lab_type(group)
-
-            devel.append([name, mean, std_dv, min_mean, max_mean, lab_type])
 
         all_clusters[name] = clusters
 
@@ -217,5 +191,7 @@ def do_clustering(data: pd.DataFrame, wcl='[]'):
 
 all_clusters, devel = do_clustering(dataset)
 
-all_clusters.to_csv(f'../../var/clusters_{Select}.tsv', sep='\t', encoding='utf8')
+all_clusters.to_csv(f'../../var/clusters_base{Select}.tsv', sep='\t', encoding='utf8')
+
+
 # devel.to_csv(f'../../var/devel_{Select}.tsv', sep='\t', encoding='utf8')
