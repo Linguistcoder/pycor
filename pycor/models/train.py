@@ -16,9 +16,9 @@ from pycor.utils.vectors import vectorize_and_cosine
 RANDOM_STATE = 1
 np.random.seed(RANDOM_STATE)
 
-select = 'word2vec_80'
-select_2 = 'word2vec_mellem'
-train_dataset = pd.read_csv(f'../../data/reduction/reduction_dataset_{select}.tsv', '\t', encoding='utf8')
+select = 'mellem_train_less'
+select_2 = 'keywords_train_less'
+train_dataset = pd.read_csv(f'../../data/reduction/reduction_word2vec_{select}.tsv', '\t', encoding='utf8')
 #train_dataset = pd.read_csv(f'../../data/bert/reduction_score_{select_2}.tsv', '\t', encoding='utf8')
 train_dataset = train_dataset.dropna()
 #score = train_dataset.score.values.reshape(-1, 1)
@@ -27,7 +27,7 @@ train_dataset = train_dataset.dropna()
 
 #train_dataset = train_dataset[dataset['ordklasse']=='sb.']
 
-test_dataset = pd.read_csv(f'../../data/reduction/reduction_dataset_{select_2}.tsv', '\t', encoding='utf8')
+test_dataset = pd.read_csv(f'../../data/reduction/reduction_word2vec_{select_2}.tsv', '\t', encoding='utf8')
 #test_dataset = pd.read_csv(f'../../data/bert/reduction_score_{select_2}.tsv', '\t', encoding='utf8')
 #test_dataset = test_dataset.dropna()
 #test_dataset = test_dataset[dataset['ordklasse']=='sb.']

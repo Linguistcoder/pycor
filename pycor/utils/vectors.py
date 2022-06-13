@@ -1,5 +1,4 @@
 from pycor.models.word2vec import word2vec_tokenizer, word2vec_embed
-from scipy.spatial.distance import cosine
 import numpy as np
 
 def vectorize(row, infotypes=['def']):
@@ -7,6 +6,9 @@ def vectorize(row, infotypes=['def']):
 
     if 'def' in infotypes:
         sentence += word2vec_tokenizer(row.definition)
+
+    if 'bow' in infotypes:
+        sentence += word2vec_tokenizer(row.bow)
 
     if 'kollokation' in infotypes:
         if row.kollokation and type(row.kollokation) != float:
@@ -54,8 +56,3 @@ def vectorize_rows(row):
         return np.zeros((1000,)) + 0.00001
 
 
-def vectorize_and_cosine(row):
-    vector1 = word2vec_embed(word2vec_tokenizer(row.sentence_1))
-    vector2 = word2vec_embed(word2vec_tokenizer(row.sentence_2))
-
-    return cosine(vector1, vector2)
