@@ -78,4 +78,4 @@ if __name__ == "__main__":
 
     # load_and_create_datasets(config_name, config_path)
     filename = sys.argv[1]  # 'data/hum_anno/all_09_06_2022.txt'
-    generate_embeddings(filename, (model, tokenizer), word2vec)
+    generate_embeddings(filename, (model, tokenizer), word2vec, save_path=config['model_paths']['save_path'])
