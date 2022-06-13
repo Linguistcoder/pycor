@@ -49,10 +49,10 @@ def generate_embeddings(filename, bert, word2vec, save_path):
 
     print('Data loaded.')
 
-    anno = DataSet(anno, "generate_embeddings", embedding_type={"bert": bert,
-                                                                "word2vec": word2vec})
-
-    anno.to_csv(f'{save_path}/annotations_with_embeddings.tsv', sep='\t', encoding='utf8')
+    anno = DataSet(anno,
+                   "generate_embeddings",
+                   embedding_type={"bert": bert, "word2vec": word2vec},
+                   output_path=save_path)
 
 
 if __name__ == "__main__":

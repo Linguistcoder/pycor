@@ -42,7 +42,8 @@ class DataSet(List):
 
         elif dataset_type == 'generate_embeddings':
             embeddings = kwargs.get('embedding_type', ['word2vec'])
-            self.generate_embeddings(data, embeddings)
+            output_path = kwargs.get('output_path', 'var/')
+            self.generate_embeddings(data, embeddings, output_path)
 
     def generate_grouped_data(self, groupby):
         pass
@@ -467,7 +468,7 @@ class DataSet(List):
 
         return self
 
-    def generate_embeddings(self, annotations, embedding_type):
+    def generate_embeddings(self, annotations, embedding_type, output_path):
 
         instance = namedtuple('instance', ['lemma', 'ordklasse', 'homnr', 'bet', 'bet_id',
                                            'sentence', 'bow'])
@@ -484,7 +485,7 @@ class DataSet(List):
             annotations['word2vec'] = annotations.apply(lambda row: word2vec_embed(row.bow, embedding_type['word2vec']),
                                                         axis=1)
             print('Added word2vec embeddings')
-        annotations.to_csv('annotations_with_embeddings.tsv', sep='\t', encoding='utf8')
+        annotations.to_csv(f'{output_path}/annotations_with_embeddings.tsv', sep='\t', encoding='utf8')
 
         return annotations
 
