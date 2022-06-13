@@ -1,29 +1,18 @@
 import numpy as np
-import pandas as pd
-
 from scipy.spatial.distance import cosine
-from gensim.models import KeyedVectors
 
-from pycor.config import Config
 from pycor.utils.preprocess import remove_special_char, remove_stopwords
 
 #model_path = 'data/word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model'
 #word2vec = Word2Vec.load(model_path).wv
 
-print('Loading word2vec model')
-model_path = Config.word2vec_PATH
-word2vec = KeyedVectors.load_word2vec_format(model_path,
-                                             fvocab=Config.word2vec_PATH + '.vocab',
-                                             binary=False)
-print('Loaded word2vec model')
-
-def word2vec_tokenizer(sentence):
+def word2vec_tokenizer(sentence, word2vec):
     output = [word for word in remove_stopwords(remove_special_char(sentence))
               if word in word2vec.key_to_index]
     return output
 
 
-def word2vec_embed(sentence):
+def word2vec_embed(sentence, word2vec):
     if type(sentence) == str:
         sentence = [sentence]
     elif type(sentence) == float:
@@ -34,9 +23,9 @@ def word2vec_embed(sentence):
     return np.mean(vectors, axis=0)
 
 
-def vectorize_and_cosine(row):
-    vector1 = word2vec_embed(word2vec_tokenizer(row.sentence_1))
-    vector2 = word2vec_embed(word2vec_tokenizer(row.sentence_2))
+def vectorize_and_cosine(row, word2vec):
+    vector1 = word2vec_embed(word2vec_tokenizer(row.sentence_1, word2vec), word2vec)
+    vector2 = word2vec_embed(word2vec_tokenizer(row.sentence_2, word2vec), word2vec)
 
     return cosine(vector1, vector2)
 

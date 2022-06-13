@@ -1,7 +1,3 @@
-from collections import namedtuple
-
-import torch
-import numpy as np
 from transformers import BertPreTrainedModel, BertModel, BertConfig, BertTokenizer
 import torch
 from torch.utils.data import DataLoader
@@ -9,9 +5,7 @@ from tqdm import tqdm
 
 from pycor.load_annotations.load_with_bert import Sense_Selection_Data, SentDataset, collate_batch
 from pycor.models.save_checkpoints import load_checkpoint
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 class BertSense(BertPreTrainedModel):
     def __init__(self, config):
@@ -188,15 +182,15 @@ def get_model_and_tokenizer(model_name, model_type, device, checkpoint=False):
     return model, tokenizer, forward
 
 
-BERT_MODEL = 'Maltehb/danish-bert-botxo'
-MODEL, TOKENIZER, FORWARD = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
-                                                    'bertbase',# 'bert_token_cos'
-                                                     device,
-                                                     checkpoint=r'pycor\models\checkpoints\model_0.pt')
+#BERT_MODEL = 'Maltehb/danish-bert-botxo'
+#MODEL, TOKENIZER, FORWARD = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
+#                                                    'bertbase',# 'bert_token_cos'
+#                                                     device,
+#                                                     checkpoint=r'pycor\models\checkpoints\model_0.pt')
 #'/content/drive/MyDrive/SPECIALE/data/model_0.pt')
 
 
-def get_BERT_score(data, model=MODEL, tokenizer=TOKENIZER, forward=FORWARD):
+def get_BERT_score(data, model, tokenizer, forward):
     reduction = SentDataset(Sense_Selection_Data(data, tokenizer))
     dataloader = DataLoader(reduction,
                             batch_size=1,
@@ -231,7 +225,7 @@ def get_BERT_score(data, model=MODEL, tokenizer=TOKENIZER, forward=FORWARD):
 
     return data
 
-def get_bert_embedding(row, model=MODEL, tokenizer=TOKENIZER):
+def get_bert_embedding(row, model, tokenizer):
     bert_data = SentDataset(Sense_Selection_Data(row, tokenizer, data_type='single'))
 
     model.eval()

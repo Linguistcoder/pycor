@@ -8,6 +8,8 @@ from scipy.spatial.distance import cosine
 from pycor.models.bert import get_bert_embedding
 from pycor.models.word2vec import word2vec_embed
 from pycor.utils import preprocess
+
+
 # from pycor.utils.vectors import vectorize
 
 
@@ -81,15 +83,15 @@ class DataSet(List):
             if 'citat' in annotations:
                 ddo_citat = {row.ddo_betyd_nr: row.citat.split('||') for row in group.itertuples() if row.citat != ''}
 
-            ddo2cor = {row.ddo_betyd_nr: 1 for row in group.itertuples()} #row.cor for row in group.itertuples()}
+            ddo2cor = {row.ddo_betyd_nr: 1 for row in group.itertuples()}  # row.cor for row in group.itertuples()}
 
             sense_pairs = set([frozenset((sens, sens2))
                                for index, sens in enumerate(senses[:-1]) for sens2 in senses[index + 1:]])
             sense_pairs = [pair for pair in sense_pairs if len(pair) > 1]
 
             for sense, sense2 in sense_pairs:
-                sentence_1 = ddo_definitions[sense[0]] #+ ddo_citat.get(sense, [])
-                sentence_2 = ddo_definitions[sense2[0]] #+ ddo_citat.get(sense2, [])
+                sentence_1 = ddo_definitions[sense[0]]  # + ddo_citat.get(sense, [])
+                sentence_2 = ddo_definitions[sense2[0]]  # + ddo_citat.get(sense2, [])
 
                 if 'citat' in annotations:
                     sentence_1 += ddo_citat.get(sense[0], [])
@@ -169,7 +171,7 @@ class DataSet(List):
                                    ordklasse=wcl,
                                    homnr=homnr,
                                    ddo_bet=row.ddo_betyd_nr,
-                                   cor="",#row.cor,
+                                   cor="",  # row.cor,
                                    onto=preprocess.clean_ontology(row.dn_onto1).union(
                                        preprocess.clean_ontology(row.dn_onto2)),
                                    main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
@@ -185,7 +187,7 @@ class DataSet(List):
                     onto_score = 1 if onto_sim == sam1.onto or onto_sim == sam2.onto else 0
                     same_main = 1 if sam1.main_sense == sam2.main_sense else 0
                     both_fig = preprocess.get_fig_value(sam1.figurative, sam2.figurative)
-                    label = ""#1 if sam1.cor == sam2.cor else 0
+                    label = ""  # 1 if sam1.cor == sam2.cor else 0
                     score = 1 if same_main == 1 and both_fig == 0 and onto_score == 1 else 0
 
                     pair = Sense_pair(lemma=lemma,
@@ -203,7 +205,6 @@ class DataSet(List):
                     self.append(pair)
 
         return self
-
 
     # def generate_feature_dataset(self, annotations: pd.DataFrame, infotypes, textbase):
     #     """Create a paired word sense feature vector dataset
@@ -473,16 +474,19 @@ class DataSet(List):
 
         if 'bert' in embedding_type:
             print('Calculating BERT embeddings')
-            annotations['bert'] = annotations.apply(get_bert_embedding, axis=1)
+            annotations['bert'] = annotations.apply(lambda row: get_bert_embedding(row,
+                                                                                   embedding_type['bert'][0],
+                                                                                   embedding_type['bert'][1], ),
+                                                    axis=1)
             print('Added BERT embeddings')
         if 'word2vec' in embedding_type:
             print('Calculating word2vec embeddings')
-            annotations['word2vec'] = annotations.apply(lambda row: word2vec_embed(row.bow), axis=1)
+            annotations['word2vec'] = annotations.apply(lambda row: word2vec_embed(row.bow, embedding_type['word2vec']),
+                                                        axis=1)
             print('Added word2vec embeddings')
         annotations.to_csv('annotations_with_embeddings.tsv', sep='\t', encoding='utf8')
 
         return annotations
-
 
     def to_dataframe(self):
         return pd.DataFrame(self)
