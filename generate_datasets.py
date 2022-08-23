@@ -94,7 +94,7 @@ if __name__ == "__main__":
         # config_bert = BertConfig.from_pretrained(bert_model, num_labels=2)
         bert = BertSense.from_pretrained(bert_model)
         bert.load_tokenizer(bert_model)
-        bert.load_checkpoint('pycor/models/checkpoints/model_0.pt')
+        bert.load_checkpoint(config['model_paths']['bert'])
         bert.to(device)
 
         models = {'bert': bert, 'word2vec': word2vec}
