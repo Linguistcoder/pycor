@@ -260,7 +260,7 @@ class DataSet(List):
                                       bet_id=row.sense_id,
                                       word2vec=embedding_type['word2vec']
                                       .embed(embedding_type['word2vec'].tokenizer(row.bow)),
-                                      bert=[sent for sent in (['TGT '] + row.ddo_definition, row.citat)
+                                      bert=[sent for sent in ('[TGT] ' + row.ddo_definition, row.citat)
                                             if type(row.citat) is not float],
                                       onto=onto,
                                       main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
