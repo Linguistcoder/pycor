@@ -87,13 +87,13 @@ class BERT_model(BertPreTrainedModel):
             with torch.no_grad():
                 # run model
                 for batch in batches:
-                    logits = self(input_ids=batch[2],
-                                  attention_mask=batch[3],
-                                  token_type_ids=batch[4]
+                    logits = self(input_ids=batch[2].to(self.device),
+                                  attention_mask=batch[3].to(self.device),
+                                  token_type_ids=batch[4].to(self.device)
                                   )
 
                     logits = self.sigmoid(torch.arctan(logits))
-                    score.append(logits)
+                    score.append(logits.cpu())
 
             nb_eval_steps += 1
 
