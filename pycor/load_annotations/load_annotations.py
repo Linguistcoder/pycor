@@ -130,7 +130,7 @@ def sample(population, sample_size, bias, **subgroup):
     return sample1, sample2
 
 
-def create_or_sample_datasets(datasets: dict, sampled=True):
+def create_or_sample_datasets(datasets: dict, sampled=True, save_path='data/'):
     subsets = []
     for dataset, config in datasets.items():
         print(f'_______________SAMPLE FOR {dataset}____________________')
@@ -158,9 +158,9 @@ def create_or_sample_datasets(datasets: dict, sampled=True):
                                             subsample_size=config['subsample_size'],
                                             sub_bias=config['sub_bias']
                                             )
-                train.to_csv(f'data/{dataset}_train.tsv', sep='\t', encoding='utf8')
-                devel.to_csv(f'data/{dataset}_devel.tsv', sep='\t', encoding='utf8')
-                test.to_csv(f'data/{dataset}_test.tsv', sep='\t', encoding='utf8')
+                train.to_csv(f'{save_path}{dataset}_train.tsv', sep='\t', encoding='utf8')
+                devel.to_csv(f'{save_path}{dataset}_devel.tsv', sep='\t', encoding='utf8')
+                test.to_csv(f'{save_path}{dataset}_test.tsv', sep='\t', encoding='utf8')
 
                 subsets += [f"{dataset}_train", f"{dataset}_devel", f"{dataset}_test"]
 
@@ -169,14 +169,14 @@ def create_or_sample_datasets(datasets: dict, sampled=True):
             else:
                 train, test = sample(anno, config['sample_size'], config['bias'])
 
-                train.to_csv(f'data/{dataset}_train.tsv', sep='\t', encoding='utf8')
-                test.to_csv(f'data/{dataset}_test.tsv', sep='\t', encoding='utf8')
+                train.to_csv(f'{save_path}{dataset}_train.tsv', sep='\t', encoding='utf8')
+                test.to_csv(f'{save_path}{dataset}_test.tsv', sep='\t', encoding='utf8')
 
                 subsets += [f"{dataset}_train", f"{dataset}_test"]
 
                 print(f'Saved {dataset} (train {len(train)},  test {len(test)}) to data/')
         else:
-            anno.to_csv(f'data/{dataset}_processed.tsv', sep='\t', encoding='utf8')
+            anno.to_csv(f'{save_path}{dataset}_processed.tsv', sep='\t', encoding='utf8')
             subsets += [f"{dataset}_processed"]
 
     return subsets

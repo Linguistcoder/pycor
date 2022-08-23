@@ -3,7 +3,6 @@ from collections import namedtuple
 from typing import List
 import torch
 from scipy.spatial.distance import cosine
-
 from pycor.utils import preprocess
 
 
@@ -234,7 +233,7 @@ class DataSet(List):
         Sense = namedtuple('Sense', ['lemma', 'ordklasse', 'homnr', 'ddo_bet', 'bet_id', 'cor', 'word2vec', 'bert',
                                      'onto', 'main_sense', 'figurative']
                            )
-        annotations['cor_onto'] = annotations.apply(lambda row: str(row.onto1) + '+' + str(row.onto2), axis=1)
+        annotations['cor_onto'] = annotations.apply(lambda r: str(r.onto1) + '+' + str(r.onto2), axis=1)
 
         for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
 
@@ -260,8 +259,7 @@ class DataSet(List):
                                       ddo_bet=row.ddo_betyd_nr,
                                       bet_id=row.sense_id,
                                       word2vec=embedding_type['word2vec']
-                                                                   .embed(embedding_type['word2vec']
-                                                                   .tokenizer(row.bow)),
+                                      .embed(embedding_type['word2vec'].tokenizer(row.bow)),
                                       bert=[sent for sent in (['TGT '] + row.ddo_definition, row.citat)
                                             if type(row.citat) is not float],
                                       onto=onto,
@@ -277,9 +275,7 @@ class DataSet(List):
                     point = [lemma, wcl, homnr, sam1.ddo_bet, sam1.bet_id, sam2.ddo_bet, sam2.bet_id]
 
                     if 'cosine' in infotypes:
-                        pass
-                        point.append(0)
-                        #point.append(cosine(sam1.word2vec, sam2.word2vec))
+                        point.append(cosine(sam1.word2vec, sam2.word2vec))
                     if 'bert' in infotypes:
                         pairs = [[sam1.lemma, sen1, sen2, 0] for sen1 in sam1.bert for sen2 in sam2.bert]
                         pairs = pd.DataFrame(pairs, columns=['lemma', 'sentence_1', 'sentence_2', 'label'])

@@ -1,10 +1,9 @@
 import sys
 import torch
-from transformers import BertConfig
 
 from pycor.load_annotations.datasets import DataSet
 from pycor.load_annotations.load_annotations import read_procssed_anno, read_anno, create_or_sample_datasets
-from pycor.models.bert import BERT_model, BertSense
+from pycor.models.bert import BertSense
 from pycor.models.word2vec import word2vec_model
 from pycor.utils.save_load import load_obj
 
@@ -41,16 +40,17 @@ def load_and_sample_datasets(config_name, config_path):
         # feature_based
 
 
-def load_feature_dataset(config_name, config_path, infotypes, models, sample=True):
+def load_feature_dataset(config_name, config_path, infotypes, models, save_sample='data/', save_final='var/',
+                         sample=True):
     config = load_obj(config_name, load_json=True, path=config_path)
 
-    datasets = create_or_sample_datasets(config, sampled=sample)
+    datasets = create_or_sample_datasets(config, sampled=sample, save_path=save_sample)
 
     for subset in datasets:
-        anno = read_procssed_anno(f"data/{subset}.tsv")
+        anno = read_procssed_anno(f"{save_sample}{subset}.tsv")
 
         feature_dataset = DataSet(anno, "feature", infotypes=infotypes, embedding_type=models)
-        feature_dataset.to_tsv(f"var/{subset}_feature_dataset.tsv")
+        feature_dataset.to_tsv(f"{save_final}{subset}_feature_dataset.tsv")
 
 
 def generate_embeddings(filename, models, save_path):
@@ -69,7 +69,7 @@ def generate_embeddings(filename, models, save_path):
 
 
 if __name__ == "__main__":
-    config_path = "configs/"
+    config_path = sys.argv[2]
 
     run_type = sys.argv[1]
 
@@ -97,13 +97,18 @@ if __name__ == "__main__":
         bert.load_checkpoint('pycor/models/checkpoints/model_0.pt')
         bert.to(device)
 
-        models = {'bert': bert}#, 'word2vec': word2vec}
+        models = {'bert': bert, 'word2vec': word2vec}
 
         if run_type == 'c' or run_type == 'create':
             infos = ['cosine', 'bert', 'onto', 'main_sense', 'figurative']
-            load_feature_dataset("config_datasets", config_path, infos, models)
+            load_feature_dataset("config_datasets",
+                                 config_path,
+                                 infos,
+                                 models,
+                                 save_sample=sys.argv[3],
+                                 save_final=sys.argv[4])
 
         if run_type == 'e' or run_type == 'embed':
-            filename = sys.argv[2]
+            filename = sys.argv[3]
             generate_embeddings(filename, models, save_path=config['model_paths']['save_path'])
             # generate_embeddings(filename, None, word2vec, save_path=config['model_paths2']['save_path'])
