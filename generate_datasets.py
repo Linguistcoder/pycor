@@ -82,7 +82,7 @@ if __name__ == "__main__":
         config = load_obj(config_name, load_json=True, path=config_path)
 
         print('Loading word2vec model')
-        model_path = config['model_paths2']['word2vec']
+        model_path = config['model_paths']['word2vec']
         word2vec = word2vec_model.load_word2vec_format(model_path,
                                                        fvocab=model_path + '.vocab',
                                                        binary=False)
