@@ -5,12 +5,12 @@ from sklearn.metrics import f1_score
 
 from sklearn.preprocessing import MinMaxScaler
 
-from pycor.config import ClusteringConfig
+from configs.config_clustering import ClusteringConfig
 from pycor.models.clustering import ClusterAlgorithm
 
-model_name = 'bert' #'word2vec'
-subset_name = 'keywords_testbase' #'cbc_devel3'
-tune_name = 'cbc_develbase3' #'cbc_devel3'
+model_name = 'base' #'word2vec'
+subset_name = 'cbc_test' #'cbc_devel3'
+tune_name = 'cbc_test' #'cbc_devel3'
 binary_thres = 0.31
 
 file = f'../data/{model_name}/reduction_score_{subset_name}.tsv'

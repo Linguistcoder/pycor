@@ -4,12 +4,10 @@ import dash_html_components as html
 import plotly.express as px
 from dash.dependencies import Input, Output
 
-from pycor.config import Config
+from configs.webapp_config import Config
 from pycor.visualisation.cosine_repr import get_representations_from_lemma, get_cosine_matrix
 
 colorscales = px.colors.named_colorscales()
-infos = ['def', 'citat']
-# fig.show()
 
 app = dash.Dash(__name__)
 
@@ -28,11 +26,13 @@ app.layout = html.Div([
         id="ordklasse",
         type="text",
         value="sb."),
-    dcc.Checklist(
-        id='info_type',
-        options=[{"value": y, "label": y}
-                 for y in infos],
-        value=["def", "genprox"]),
+    # todo: check if this is still necessary
+
+    #    dcc.Checklist(
+    #        id='info_type',
+    #        options=[{"value": y, "label": y}
+    #                 for y in infos],
+    #        value=["def", "genprox"]),
     dcc.Graph(id="graph"),
 ])
 
@@ -46,12 +46,12 @@ app.layout = html.Div([
     Input("colorscale", "value"),
     Input("lemma", "value"),
     Input("ordklasse", "value"),
-    Input("info_type", "value")
+    # Input("info_type", "value")
 )
-def change_colorscale(scale, lemma, ordklasse, info_type):
-    data, labels = get_representations_from_lemma(lemma, ordklasse, info_types=info_type)
+def change_colorscale(scale, lemma, ordklasse):
+    # todo: change get representations_from_lemma to just load embeddings
+    data, labels = get_representations_from_lemma(lemma, ordklasse)
     matrix = get_cosine_matrix(data, labels)
-
     fig = px.imshow(matrix, color_continuous_scale=scale, zmin=0, zmax=1)
 
     return fig

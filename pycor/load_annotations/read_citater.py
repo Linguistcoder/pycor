@@ -1,12 +1,12 @@
 import pandas as pd
 from pycor.utils import preprocess
 
-citater = pd.read_csv('../../data/citat/keywords_citater.csv',
+citater = pd.read_csv('../../data/citat/citater_mellemfrekvente.tsv',
                       sep='\t',
                       encoding='utf-8'
                       )
 
-annotated = pd.read_csv('../../data/hum_anno/keywords_07_03_2022.txt',
+annotated = pd.read_csv('../../data/hum_anno/mellemfrek_18_08_22.tsv',
                         sep='\t',
                         encoding='utf-8',
                         na_values=['n', ' '],
@@ -53,4 +53,4 @@ citater = citater.dropna(subset=['ddo_lemma', 'ddo_dannetsemid', 'citat'])
 citater['citat'] = citater['citat'].apply(preprocess.remove_special_char)
 citater['citat'] = citater.apply(lambda row: preprocess.form_in_sentence(row.citat, row.ddo_lemma.lower()), axis=1)
 
-citater.to_csv('../../data/keywords_citater_ren.tsv', sep='\t', encoding='utf8')
+citater.to_csv('../../data/citat/mellem_citater_ren.tsv', sep='\t', encoding='utf8')

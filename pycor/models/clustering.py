@@ -49,7 +49,7 @@ class Cluster(dict):
         elif bet_1 not in self.inverse and bet_2 not in self.inverse:
             self[COR] = list(pair.bets)
             COR += 1
-        elif set(pair.bets) in uniq_pairs and dis > 0 and pair.distance < dis:
+        elif set(pair.bets) in uniq_pairs and dis >= 0 and pair.distance <= dis:
             #if pair.label == 0:
                 #print(str(pair.distance).replace(".", ","))
                 #print('NOT merge:', pair.distance)
@@ -180,12 +180,22 @@ class ClusterAlgorithm(object):
         for name, group in data.groupby(['lemma', 'ordklasse', 'homnr']):
             lemma = name[0].lower()
             wcl = name[1].lower()
+
+            if lemma == 'brus':
+                print(group)
+
             clusters = {}
             pairs = [Pair(bets=((row.bet_1, row.bet1_id), (row.bet_2, row.bet2_id)),
                           distance=row.score,
                           label=row.label) for row in group.itertuples()
-                     # for name, group in group.groupby(['bet_1', 'bet_2'])
-                     ]
+                          #for name, group in group.groupby(['bet_1', 'bet_2'])
+                      ]
+            # pairs = [Pair(bets=((row.bet_1), (row.bet_2)),
+            #               distance=row.score,
+            #               label=row.label) for row in group.itertuples()
+            #          # for name, group in group.groupby(['bet_1', 'bet_2'])
+            #          ]
+
             uniq_pairs = set([frozenset(pair.bets) for pair in pairs])
 
             # group = group.groupby(['bet_1', 'bet_2']).aggregate({'homnr': 'mean',

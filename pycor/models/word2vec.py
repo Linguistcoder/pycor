@@ -1,38 +1,37 @@
+from abc import ABC
+
 import numpy as np
+from gensim.models import KeyedVectors
 from scipy.spatial.distance import cosine
 
 from pycor.utils.preprocess import remove_special_char, remove_stopwords
 
-#model_path = 'data/word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model'
-#word2vec = Word2Vec.load(model_path).wv
 
-def word2vec_tokenizer(sentence, word2vec):
-    output = [word for word in remove_stopwords(remove_special_char(sentence))
-              if word in word2vec.key_to_index]
-    return output
+class word2vec_model(KeyedVectors):
+    def tokenizer(self, sentence):
+        output = [word for word in remove_stopwords(remove_special_char(sentence))
+                  if word in self.key_to_index]
+        return output
 
+    def embed(self, sentence):
+        if type(sentence) == str:
+            sentence = [sentence]
+        elif type(sentence) == float:
+            return np.nan
+        vectors = [self.get_vector(word) for word in sentence if word in self.key_to_index]
+        if len(vectors) < 1:
+            return np.nan
+        return np.mean(vectors, axis=0)
 
-def word2vec_embed(sentence, word2vec):
-    if type(sentence) == str:
-        sentence = [sentence]
-    elif type(sentence) == float:
-        return np.nan
-    vectors = [word2vec.get_vector(word) for word in sentence if word in word2vec.key_to_index]
-    if len(vectors) < 1:
-        return np.nan
-    return np.mean(vectors, axis=0)
+    def vectorize_and_cosine(self, sentence_1, sentence_2):
+        vector1 = self.embed(self.tokenizer(sentence_1))
+        vector2 = self.embed(self.tokenizer(sentence_2))
 
+        return cosine(vector1, vector2)
 
-def vectorize_and_cosine(row, word2vec):
-    vector1 = word2vec_embed(word2vec_tokenizer(row.sentence_1, word2vec), word2vec)
-    vector2 = word2vec_embed(word2vec_tokenizer(row.sentence_2, word2vec), word2vec)
-
-    return cosine(vector1, vector2)
-
-
-datasets = ['cbc_train', 'cbc_devel', 'cbc_test', 'keywords_train', 'keywords_test',
-             'mellem_train', 'mellem_test', 'cbc_devel_less', 'cbc_test_less', 'keywords_test_less'
-             ]
+# datasets = ['cbc_train', 'cbc_devel', 'cbc_test', 'keywords_train', 'keywords_test',
+#             'mellem_train', 'mellem_test', 'cbc_devel_less', 'cbc_test_less', 'keywords_test_less'
+#             ]
 
 # for subset in datasets:
 #      print(f'______________________{subset.upper()}____________________________')

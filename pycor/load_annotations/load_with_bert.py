@@ -120,7 +120,7 @@ class Sense_Selection_Data(List):
 
         datapoints.append(BertInput(lemma=row.ddo_lemma,
                                     onto=row.cor_onto,
-                                    COR=row.cor_bet_inventar,
+                                    COR=row.cor,
                                     DDO=row.ddo_betyd_nr,
                                     wcl=row.ddo_ordklasse,
                                     input_ids=input_ids,

@@ -33,6 +33,6 @@ class ClusteringConfig(object):
             self.h_mean1 = 1  # cluster upper threshold
             self.hm_mean = 0.5  # cluster median threshold
             self.h_mean0 = 0  # cluster median lower threshold
-            self.bias = 1
+            self.bias = 1.5
             self.absmin = 0
             self.absmax = 1

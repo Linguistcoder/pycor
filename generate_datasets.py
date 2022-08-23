@@ -1,17 +1,18 @@
 import sys
-
 import torch
-from gensim.models import KeyedVectors
+from transformers import BertConfig
+
 from pycor.load_annotations.datasets import DataSet
-from pycor.load_annotations.load_annotations import read_procssed_anno, read_anno, create_sampled_datasets
-from pycor.models.bert import get_model_and_tokenizer
+from pycor.load_annotations.load_annotations import read_procssed_anno, read_anno, create_or_sample_datasets
+from pycor.models.bert import BERT_model, BertSense
+from pycor.models.word2vec import word2vec_model
 from pycor.utils.save_load import load_obj
 
 
-def load_and_create_datasets(config_name, config_path):
+def load_and_sample_datasets(config_name, config_path):
     config = load_obj(config_name, load_json=True, path=config_path)
 
-    datasets = create_sampled_datasets(config)
+    datasets = create_or_sample_datasets(config)
 
     for subset in datasets:
         print(f"______________________{subset.upper()}____________________________")
@@ -40,7 +41,19 @@ def load_and_create_datasets(config_name, config_path):
         # feature_based
 
 
-def generate_embeddings(filename, bert, word2vec, save_path):
+def load_feature_dataset(config_name, config_path, infotypes, models, sample=True):
+    config = load_obj(config_name, load_json=True, path=config_path)
+
+    datasets = create_or_sample_datasets(config, sampled=sample)
+
+    for subset in datasets:
+        anno = read_procssed_anno(f"data/{subset}.tsv")
+
+        feature_dataset = DataSet(anno, "feature", infotypes=infotypes, embedding_type=models)
+        feature_dataset.to_tsv(f"var/{subset}_feature_dataset.tsv")
+
+
+def generate_embeddings(filename, models, save_path):
     print("Loading data...")
     anno = read_anno(anno_file=filename,
                      quote_file='',
@@ -49,33 +62,48 @@ def generate_embeddings(filename, bert, word2vec, save_path):
 
     print('Data loaded.')
 
-    anno = DataSet(anno,
-                   "generate_embeddings",
-                   embedding_type={"bert": bert, "word2vec": word2vec},
-                   output_path=save_path)
+    DataSet(anno,
+            "generate_embeddings",
+            embedding_type=models,
+            output_path=save_path)
 
 
 if __name__ == "__main__":
-    config_name = "config_model"
     config_path = "configs/"
 
-    config = load_obj(config_name, load_json=True, path=config_path)
+    run_type = sys.argv[1]
 
-    print('Loading word2vec model')
-    model_path = config['model_paths']['word2vec']
-    word2vec = KeyedVectors.load_word2vec_format(model_path,
-                                                 fvocab=model_path + '.vocab',
-                                                 binary=False)
-    print('Loaded word2vec model')
+    if run_type == 's' or run_type == 'sample':
+        config_name = "config_datasets"  # "config_model"
+        load_and_sample_datasets(config_name, config_path)
 
-    print('Loading BERT')
-    bert_model = 'Maltehb/danish-bert-botxo'
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, tokenizer, forward = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
-                                                        'bertbase',  # 'bert_token_cos'
-                                                        device,
-                                                        checkpoint=config['model_paths']['bert'])
+    else:
+        config_name = "config_model"
+        config = load_obj(config_name, load_json=True, path=config_path)
 
-    # load_and_create_datasets(config_name, config_path)
-    filename = sys.argv[1]  # 'data/hum_anno/all_09_06_2022.txt'
-    generate_embeddings(filename, (model, tokenizer), word2vec, save_path=config['model_paths']['save_path'])
+        print('Loading word2vec model')
+        model_path = config['model_paths2']['word2vec']
+        word2vec = word2vec_model.load_word2vec_format(model_path,
+                                                       fvocab=model_path + '.vocab',
+                                                       binary=False)
+        print('Loaded word2vec model')
+
+        print('Loading BERT')
+        bert_model = 'Maltehb/danish-bert-botxo'
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # config_bert = BertConfig.from_pretrained(bert_model, num_labels=2)
+        bert = BertSense.from_pretrained(bert_model)
+        bert.load_tokenizer(bert_model)
+        bert.load_checkpoint('pycor/models/checkpoints/model_0.pt')
+        bert.to(device)
+
+        models = {'bert': bert}#, 'word2vec': word2vec}
+
+        if run_type == 'c' or run_type == 'create':
+            infos = ['cosine', 'bert', 'onto', 'main_sense', 'figurative']
+            load_feature_dataset("config_datasets", config_path, infos, models)
+
+        if run_type == 'e' or run_type == 'embed':
+            filename = sys.argv[2]
+            generate_embeddings(filename, models, save_path=config['model_paths']['save_path'])
+            # generate_embeddings(filename, None, word2vec, save_path=config['model_paths2']['save_path'])

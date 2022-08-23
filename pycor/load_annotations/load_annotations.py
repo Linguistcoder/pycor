@@ -37,8 +37,8 @@ def read_anno(anno_file: str, quote_file: str, keyword_file: str, columns=None, 
 
         #anno.citat = anno.citat.apply(clean_str)
 
-        anno.citat2 = anno.citat.apply(lambda x: x.replace('[TGT]', '') if isinstance(x, str) else '')
-        anno.citat2 = anno.citat2.apply(lambda x: x.replace('||', '') if isinstance(x, str) else '')
+        anno['citat2'] = anno.citat.apply(lambda x: x.replace('[TGT]', '') if isinstance(x, str) else '')
+        anno['citat2'] = anno.citat2.apply(lambda x: x.replace('||', '') if isinstance(x, str) else '')
 
     if keyword_file:
         keywords = pd.read_csv(keyword_file,
@@ -101,7 +101,7 @@ def read_procssed_anno(anno_file: str) -> pd.DataFrame:
 
 
 def sample(population, sample_size, bias, **subgroup):
-    lemma_groups = population.groupby(['lemma', 'ordklasse', 'homnr'])
+    lemma_groups = population.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr'])
     groups = [idx for idx in lemma_groups.groups.values() if len(idx) > 1]
 
     n_samples = int(len(groups) * sample_size)
@@ -130,7 +130,7 @@ def sample(population, sample_size, bias, **subgroup):
     return sample1, sample2
 
 
-def create_sampled_datasets(datasets: dict):
+def create_or_sample_datasets(datasets: dict, sampled=True):
     subsets = []
     for dataset, config in datasets.items():
         print(f'_______________SAMPLE FOR {dataset}____________________')
@@ -138,42 +138,45 @@ def create_sampled_datasets(datasets: dict):
         anno = read_anno(anno_file=config['file'],
                          quote_file=config['quote'],
                          keyword_file=config['keyword'],
-                         columns=['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition', 'ddo_genprox',
-                                  'ddo_kollokation',
-                                  'cor_bet_inventar', 'dn_id', 'ddo_betyd_nr', 'citat', 'ddo_bemaerk', 'dn_onto1',
-                                  'dn_onto2',
-                                  'dn_hyper', 'frame', 'ddo_konbet', 'ddo_encykl', 'bow', 'length']
+                         columns=['lobenummer', 'ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition',
+                                  'cor_bet_inventar', 'ddo_betyd_nr', 'citat', 'ddo_bemaerk', 'cor_onto',
+                                  'cor_onto2',
+                                  'cor_hyper', 'cor_frame', 'ddo_konbet', 'ddo_encykl', 'bow', 'length']
                          )
 
-        anno.columns = ['lemma', 'ordklasse', 'homnr', 'definition', 'genprox', 'kollokation', 'cor', 'dn_id', 'ddo_nr',
+        anno.columns = ['sense_id', 'ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition', 'cor', 'ddo_betyd_nr',
                         'citat', 'bemaerk', 'onto1', 'onto2', 'hyper', 'frame', 'konbet', 'encykl', 'bow', 'length']
 
         print('Data loaded.')
 
-        if 'subsample_size' in config:
-            print('Sampling...')
-            train, devel, test = sample(anno,
-                                        config['sample_size'],
-                                        config['bias'],
-                                        subsample_size=config['subsample_size'],
-                                        sub_bias=config['sub_bias']
-                                        )
-            train.to_csv(f'data/{dataset}_train.tsv', sep='\t', encoding='utf8')
-            devel.to_csv(f'data/{dataset}_devel.tsv', sep='\t', encoding='utf8')
-            test.to_csv(f'data/{dataset}_test.tsv', sep='\t', encoding='utf8')
+        if sampled:
+            if 'subsample_size' in config:
+                print('Sampling...')
+                train, devel, test = sample(anno,
+                                            config['sample_size'],
+                                            config['bias'],
+                                            subsample_size=config['subsample_size'],
+                                            sub_bias=config['sub_bias']
+                                            )
+                train.to_csv(f'data/{dataset}_train.tsv', sep='\t', encoding='utf8')
+                devel.to_csv(f'data/{dataset}_devel.tsv', sep='\t', encoding='utf8')
+                test.to_csv(f'data/{dataset}_test.tsv', sep='\t', encoding='utf8')
 
-            subsets += [f"{dataset}_train", f"{dataset}_devel", f"{dataset}_test"]
+                subsets += [f"{dataset}_train", f"{dataset}_devel", f"{dataset}_test"]
 
-            print(f'Saved {dataset} (train {len(train)}, devel {len(devel)}, test {len(test)}) to data/')
+                print(f'Saved {dataset} (train {len(train)}, devel {len(devel)}, test {len(test)}) to data/')
 
+            else:
+                train, test = sample(anno, config['sample_size'], config['bias'])
+
+                train.to_csv(f'data/{dataset}_train.tsv', sep='\t', encoding='utf8')
+                test.to_csv(f'data/{dataset}_test.tsv', sep='\t', encoding='utf8')
+
+                subsets += [f"{dataset}_train", f"{dataset}_test"]
+
+                print(f'Saved {dataset} (train {len(train)},  test {len(test)}) to data/')
         else:
-            train, test = sample(anno, config['sample_size'], config['bias'])
-
-            train.to_csv(f'data/{dataset}_train.tsv', sep='\t', encoding='utf8')
-            test.to_csv(f'data/{dataset}_test.tsv', sep='\t', encoding='utf8')
-
-            subsets += [f"{dataset}_train", f"{dataset}_test"]
-
-            print(f'Saved {dataset} (train {len(train)},  test {len(test)}) to data/')
+            anno.to_csv(f'data/{dataset}_processed.tsv', sep='\t', encoding='utf8')
+            subsets += [f"{dataset}_processed"]
 
     return subsets

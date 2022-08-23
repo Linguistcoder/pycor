@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 from sklearn import metrics
 model = 'base'
-subset = 'cbc_test'
+subset = 'keywords_test'
 
 clusters = pd.read_csv(f'../../var/clusters_{model}_{subset}.tsv', sep='\t')
-clusters = clusters[clusters['wcl'] == 'sb.']
+#clusters = clusters[clusters['wcl'] == 'sb.']
 
 
 if 'cbc' in subset:
@@ -23,20 +23,21 @@ if 'cbc' in subset:
     annotated.columns = ['entryid', 'lemma', 'homnr', 'wcl', 'DDO', 'COR']
 else:
 
-    annotated = pd.read_csv(f'../../data/hum_anno/{subset.split("_")[0]}_07_03_2022.txt',
+    annotated = pd.read_csv(f'../../data/hum_anno/{subset.split("_")[0]}_18_08_22.tsv',
                             sep='\t',
                             encoding='utf-8',
                             na_values=['n', ' '],
                             usecols=['ddo_entryid', 'ddo_lemma', 'ddo_homnr',
-                                     'ddo_ordklasse', 'ddo_betyd_nr', 'COR_bet_inventar'
+                                     'ddo_ordklasse', 'ddo_betyd_nr', 'cor_bet_inventar'
                                      ],
                             index_col=False
                             )
-    annotated = annotated.dropna(subset=['ddo_lemma', 'COR_bet_inventar'])
+    annotated = annotated.dropna(subset=['ddo_lemma', 'cor_bet_inventar'])
     annotated['ddo_homnr'] = annotated['ddo_homnr'].fillna(1)
+
     annotated.columns = ['entryid', 'lemma', 'homnr', 'wcl', 'DDO', 'COR']
     # uncomment if mellemfrekvent
-    annotated.columns = ['entryid', 'lemma', 'DDO', 'wcl', 'COR', 'homnr']
+    #annotated.columns = ['entryid', 'lemma', 'DDO', 'wcl', 'COR', 'homnr']
 
 annotated['homnr'] = annotated['homnr'].astype('int64')
 clusters['homnr'] = clusters['homnr'].astype('int64')

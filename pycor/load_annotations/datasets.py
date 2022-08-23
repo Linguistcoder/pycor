@@ -1,16 +1,10 @@
 import pandas as pd
 from collections import namedtuple
-# from scipy.spatial.distance import cosine
 from typing import List
-
+import torch
 from scipy.spatial.distance import cosine
 
-from pycor.models.bert import get_bert_embedding
-from pycor.models.word2vec import word2vec_embed
 from pycor.utils import preprocess
-
-
-# from pycor.utils.vectors import vectorize
 
 
 class DataSet(List):
@@ -33,8 +27,8 @@ class DataSet(List):
 
         elif dataset_type == 'feature':
             infotypes = kwargs.get('infotypes', [])
-            textbase = kwargs.get('textbase', [])
-            self.generate_feature_dataset(data, infotypes, textbase)
+            embeddings = kwargs.get('embedding_type', ['word2vec'])
+            self.generate_feature_dataset(data, infotypes, embeddings)
 
         elif dataset_type == 'bert_reduction':
             sents = kwargs.get('sentence_type', 'all')
@@ -207,90 +201,101 @@ class DataSet(List):
 
         return self
 
-    # def generate_feature_dataset(self, annotations: pd.DataFrame, infotypes, textbase):
-    #     """Create a paired word sense feature vector dataset
-    #     Each training instance contains a
-    #         - [0] target lemma,
-    #         - [1] word class,
-    #         - [2] homonym number
-    #         - [3] dictionary sense 1
-    #         - [4] dictionary sense 2
-    #         - [x-z] selected features (information types)
-    #         - [-1] label
-    #
-    #     :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'definition', 'genprox',
-    #                                                     'kollokation', 'cor', 'dn_id', 'ddo_nr', 'citat',
-    #                                                     't_score', 'bemaerk', 'onto1', 'onto2', 'hyper', 'frame']
-    #     :param infotypes:
-    #     :param textbase:
-    #     :return: List of datapoints / training instances
-    #     """
-    #
-    #     if not isinstance(infotypes, list):
-    #         raise TypeError
-    #
-    #     Sense_pair = namedtuple('Sense_pair',
-    #                             ['lemma', 'ordklasse', 'homnr', 'bet_1', 'bet1_id', 'bet_2', 'bet2_id']
-    #                             + infotypes
-    #                             + ['label']
-    #                             )
-    #
-    #     Sense = namedtuple('Sense', ['lemma', 'ordklasse', 'homnr', 'ddo_bet', 'cor', 'word2vec', 'bert',
-    #                                  'onto', 'main_sense', 'figurative']
-    #                        )
-    #
-    #     for name, group in annotations.groupby(['lemma', 'ordklasse', 'homnr']):
-    #
-    #         lemma, wcl, homnr = name
-    #         groupset = []
-    #
-    #         if 0 < self.max_sense_limit <= len(group.index):
-    #             continue
-    #
-    #         if 'pl.' in wcl:
-    #             wcl = wcl.replace(' pl.', '')
-    #
-    #         if self.wordclass != 'all' and self.wordclass not in wcl:
-    #             continue
-    #
-    #         for row in group.itertuples():
-    #             figurative = row.bemaerk if type(row.bemaerk) != float else ''
-    #
-    #             groupset.append(Sense(lemma=lemma,
-    #                                   ordklasse=wcl,
-    #                                   homnr=homnr,
-    #                                   cor=row.cor,
-    #                                   ddo_bet=row.ddo_nr,
-    #                                   word2vec="",#vectorize(row, infotypes=textbase),
-    #                                   bert=[0],
-    #                                   onto=preprocess.clean_ontology(row.onto1)
-    #                                   .union(preprocess.clean_ontology(row.onto2)),
-    #                                   main_sense=preprocess.get_main_sense(row.ddo_nr),
-    #                                   figurative=1 if 'ofø' in figurative else 0))
-    #
-    #         # pair senses and their information:
-    #         for indx, sam1 in enumerate(groupset):
-    #             for sam2 in groupset[indx + 1:]:
-    #                 onto_sim = sam1.onto.intersection(sam2.onto)
-    #                 onto_score = 1 if onto_sim == sam1.onto else 0.5 if onto_sim == sam2.onto else 0
-    #
-    #                 point = [lemma, wcl, homnr, sam1.ddo_bet, sam2.ddo_bet]
-    #
-    #                 if 'cosine' in infotypes:
-    #                     point.append(cosine(sam1.word2vec, sam2.word2vec))
-    #                 if 'bert' in infotypes:
-    #                     point.append(0)
-    #                 if 'onto' in infotypes:
-    #                     point.append(onto_score)
-    #                 if 'main_sense' in infotypes:
-    #                     point.append(1 if sam1.main_sense == sam2.main_sense else 0)
-    #                 if 'figurative' in infotypes:
-    #                     point.append(preprocess.get_fig_value(sam1.figurative, sam2.figurative))
-    #
-    #                 point.append(1 if sam1.cor == sam2.cor else 0)
-    #
-    #                 self.append(Sense_pair(point))
-    #     return self
+    def generate_feature_dataset(self, annotations: pd.DataFrame, infotypes, embedding_type):
+        """Create a paired word sense feature vector dataset
+        Each training instance contains a
+            - [0] target lemma,
+            - [1] word class,
+            - [2] homonym number
+            - [3] dictionary sense 1
+            - [4] sense 1 id
+            - [5] dictionary sense 2
+            - [6] sense 2 id
+            - [x-z] selected features (information types)
+            - [-1] label
+
+        :param annotations: pd.DataFrame with columns: ['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition',
+                                                        'cor', ddo_betyd_nr', 'citat', 'onto1', 'onto2', 'hyper',
+                                                        'frame', 'ddo_bemaerk']
+        :param infotypes:
+        :param embedding_type:
+        :return: List of datapoints / training instances
+        """
+
+        if not isinstance(infotypes, list):
+            raise TypeError
+
+        Sense_pair = namedtuple('Sense_pair',
+                                ['lemma', 'ordklasse', 'homnr', 'bet_1', 'bet1_id', 'bet_2', 'bet2_id']
+                                + infotypes
+                                + ['label']
+                                )
+
+        Sense = namedtuple('Sense', ['lemma', 'ordklasse', 'homnr', 'ddo_bet', 'bet_id', 'cor', 'word2vec', 'bert',
+                                     'onto', 'main_sense', 'figurative']
+                           )
+        annotations['cor_onto'] = annotations.apply(lambda row: str(row.onto1) + '+' + str(row.onto2), axis=1)
+
+        for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
+
+            lemma, wcl, homnr = name
+            groupset = []
+
+            if 0 < self.max_sense_limit <= len(group.index):
+                continue
+
+            if 'pl.' in wcl:
+                wcl = wcl.replace(' pl.', '')
+
+            if self.wordclass != 'all' and self.wordclass not in wcl:
+                continue
+
+            for row in group.itertuples():
+                figurative = row.bemaerk if type(row.bemaerk) != float else ''
+                onto = preprocess.clean_ontology(row.onto1).union(preprocess.clean_ontology(row.onto2))
+                groupset.append(Sense(lemma=lemma,
+                                      ordklasse=wcl,
+                                      homnr=homnr,
+                                      cor=row.cor,
+                                      ddo_bet=row.ddo_betyd_nr,
+                                      bet_id=row.sense_id,
+                                      word2vec=embedding_type['word2vec']
+                                                                   .embed(embedding_type['word2vec']
+                                                                   .tokenizer(row.bow)),
+                                      bert=[sent for sent in (['TGT '] + row.ddo_definition, row.citat)
+                                            if type(row.citat) is not float],
+                                      onto=onto,
+                                      main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
+                                      figurative=1 if 'ofø' in figurative else 0))
+
+            # pair senses and their information:
+            for indx, sam1 in enumerate(groupset):
+                for sam2 in groupset[indx + 1:]:
+                    onto_sim = sam1.onto.intersection(sam2.onto)
+                    onto_score = 1 if onto_sim == sam1.onto else 0.5 if onto_sim == sam2.onto else 0
+
+                    point = [lemma, wcl, homnr, sam1.ddo_bet, sam1.bet_id, sam2.ddo_bet, sam2.bet_id]
+
+                    if 'cosine' in infotypes:
+                        pass
+                        point.append(0)
+                        #point.append(cosine(sam1.word2vec, sam2.word2vec))
+                    if 'bert' in infotypes:
+                        pairs = [[sam1.lemma, sen1, sen2, 0] for sen1 in sam1.bert for sen2 in sam2.bert]
+                        pairs = pd.DataFrame(pairs, columns=['lemma', 'sentence_1', 'sentence_2', 'label'])
+                        score = embedding_type['bert'].get_BERT_score(pairs, 'score')
+                        point.append(float(torch.mean(score)))
+                    if 'onto' in infotypes:
+                        point.append(onto_score)
+                    if 'main_sense' in infotypes:
+                        point.append(1 if sam1.main_sense == sam2.main_sense else 0)
+                    if 'figurative' in infotypes:
+                        point.append(preprocess.get_fig_value(sam1.figurative, sam2.figurative))
+
+                    point.append(1 if sam1.cor == sam2.cor else 0)
+
+                    self.append(Sense_pair._make(point))
+        return self
 
     def generate_sense_selection_dataset(self, annotations: pd.DataFrame, sentence_type):
         """Creates a Sense Selection dataset from a Dataframe with annotations.
@@ -320,9 +325,9 @@ class DataSet(List):
         instance = namedtuple('instance',
                               ['lemma', 'sentence', 'examples', 'senses', 'target', 'wcl'])
 
-        print(f"Number of lemmas: {annotations.groupby(['lemma', 'ordklasse', 'homnr']).ngroups}")
+        print(f"Number of lemmas: {annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']).ngroups}")
 
-        for name, group in annotations.groupby(['lemma', 'ordklasse', 'homnr']):
+        for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
             definitions = {}
             examples = {}
             lemma = name[0].lower()
@@ -343,14 +348,14 @@ class DataSet(List):
 
                 for row in sense_group.itertuples():
                     definitions[f'COR_{row.cor}'] += [f'[TGT] {lemma} [TGT] '
-                                                      + preprocess.remove_special_char(row.definition)]
+                                                      + preprocess.remove_special_char(row.ddo_definition)]
 
                     if 'citat' in annotations:
                         if type(row.citat) != float and row.citat != '[]':
                             citats = [row.citat] if '||' not in row.citat else row.citat.split('||')
                             examples[f'COR_{row.cor}'] += citats
                         else:
-                            print(f'Missing citat for {lemma}: {row.definition}')
+                            print(f'Missing citat for {lemma}: {row.ddo_definition}')
 
             # todo: optimize
             if sentence_type == 'all' or sentence_type == 'def':
@@ -454,7 +459,7 @@ class DataSet(List):
                     sentences += ddo_citat.get(sense2[0], [])
 
                 for sentence in sentences:
-                    if sentence != []:
+                    if sentence:
                         self.append(instance(lemma=lemma,
                                              ordklasse=wcl,
                                              homnr=hom_nr,
@@ -470,19 +475,16 @@ class DataSet(List):
 
     def generate_embeddings(self, annotations, embedding_type, output_path):
 
-        instance = namedtuple('instance', ['lemma', 'ordklasse', 'homnr', 'bet', 'bet_id',
-                                           'sentence', 'bow'])
-
         if 'bert' in embedding_type:
             print('Calculating BERT embeddings')
-            annotations['bert'] = annotations.apply(lambda row: get_bert_embedding(row,
-                                                                                   embedding_type['bert'][0],
-                                                                                   embedding_type['bert'][1], ),
+            annotations['bert'] = annotations.apply(lambda row: embedding_type['bert'].get_bert_embedding(row),
                                                     axis=1)
             print('Added BERT embeddings')
         if 'word2vec' in embedding_type:
             print('Calculating word2vec embeddings')
-            annotations['word2vec'] = annotations.apply(lambda row: word2vec_embed(row.bow, embedding_type['word2vec']),
+            annotations['word2vec'] = annotations.apply(lambda row: embedding_type['word2vec']
+                                                        .embed(embedding_type['word2vec']
+                                                               .tokenizer(row.bow)),
                                                         axis=1)
             print('Added word2vec embeddings')
         annotations.to_csv(f'{output_path}/annotations_with_embeddings.tsv', sep='\t', encoding='utf8')

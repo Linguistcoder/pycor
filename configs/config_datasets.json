@@ -1,6 +1,6 @@
 {
   "cbc": {
-    "file": "data/hum_anno/04_03_2022.txt",
+    "file": "data/hum_anno/cbc_18_08_22.tsv",
     "quote": "data/citat/citater_ren.tsv",
     "keyword": "",
     "sample_size": 0.6,
@@ -9,14 +9,14 @@
     "sub_bias": 0
   },
   "mellem": {
-    "file": "data/hum_anno/mellem_07_03_2022.txt",
-    "quote": "H:/CST_COR/data/DDO_citater/citater_mellemfrekvente.tsv",
+    "file": "data/hum_anno/mellemfrek_18_08_22.tsv",
+    "quote": "data/citat/mellem_citater_ren.tsv",
     "keyword": "",
     "sample_size": 0.5,
     "bias": 0
   },
   "keywords": {
-    "file": "data/hum_anno/keywords_07_03_2022.txt",
+    "file": "data/hum_anno/keywords_18_08_22.tsv",
     "quote": "data/citat/keywords_citater_ren.tsv",
     "keyword": "",
     "sample_size": 0.5,
