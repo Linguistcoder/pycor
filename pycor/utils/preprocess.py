@@ -5,7 +5,7 @@ import nltk
 from pycor.utils.lemmatizer import get_lemmatised_sentence
 
 #nlp = spacy.load("da_core_news_sm")
-# nltk.download('stopwords')
+nltk.download('stopwords')
 
 stopwords = set(nltk.corpus.stopwords.words('danish'))
 
