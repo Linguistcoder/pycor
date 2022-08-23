@@ -252,6 +252,7 @@ class DataSet(List):
             for row in group.itertuples():
                 figurative = row.bemaerk if type(row.bemaerk) != float else ''
                 onto = preprocess.clean_ontology(row.onto1).union(preprocess.clean_ontology(row.onto2))
+
                 groupset.append(Sense(lemma=lemma,
                                       ordklasse=wcl,
                                       homnr=homnr,
@@ -261,7 +262,7 @@ class DataSet(List):
                                       word2vec=embedding_type['word2vec']
                                       .embed(embedding_type['word2vec'].tokenizer(row.bow)),
                                       bert=[sent for sent in ('[TGT] ' + row.ddo_definition, row.citat)
-                                            if type(row.citat) is not float],
+                                            if type(sent) is not float],
                                       onto=onto,
                                       main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
                                       figurative=1 if 'ofø' in figurative else 0))

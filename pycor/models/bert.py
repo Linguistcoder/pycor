@@ -77,9 +77,9 @@ class BERT_model(BertPreTrainedModel):
         nb_eval_steps = 0
         score = []
 
-        iterator = tqdm(dataloader, desc="Iteration")
+        #iterator = tqdm(dataloader, desc="Iteration")
 
-        for batches in iterator:
+        for batches in dataloader:#iterator:
             if len(batches) < 1:
                 continue
 
