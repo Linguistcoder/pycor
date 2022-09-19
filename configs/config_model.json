@@ -5,7 +5,7 @@
     "save_path": "/content/drive/MyDrive/SPECIALE/Models/"
   },
     "model_paths2": {
-    "bert": "pycor/models/checkpoints/model_0.pt",
+    "bert": "Maltehb/danish-bert-botxo",
     "word2vec": "data/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors",
     "save_path": "var/"
   }

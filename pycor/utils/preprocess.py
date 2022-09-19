@@ -89,7 +89,7 @@ def get_main_sense(sense):
             sense = re.sub('[^0-9]', '', sense)
             if sense == '':
                 return 0
-            return int(sense) * 2
+            return int(sense) * 1
     except:
         print(sense)
     else:

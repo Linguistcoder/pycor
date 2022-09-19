@@ -2,12 +2,14 @@ import pandas as pd
 import numpy as np
 import re
 from sklearn.decomposition import PCA
-
+from sklearn.preprocessing import normalize
 from pycor.load_annotations.load_annotations import read_anno, read_procssed_anno
 from pycor.utils.preprocess import clean_wcl, get_main_sense
 
 
 def reduce_dim(X, n_dim=2):
+
+    X = normalize(X)
     pca = PCA(n_components=n_dim)
     pca.fit(X)
     transformed = pca.transform(X)
@@ -47,13 +49,15 @@ class Embeddings(object):
                 'score': row.score}
 
     def get_representation_for_lemmas(self, lemmas, model_name):
-        for lemma, wcl, homnr in lemmas:
+        data = []
+        for index, (lemma, wcl, homnr) in enumerate(lemmas):
             group = self.data.get_group((lemma, clean_wcl(wcl), homnr))
 
-            data = []
             for row in group.itertuples():
                 vector = row[group.columns.get_loc(model_name)+1]
-                data.append(self.get_representation(row, vector))
+                content = self.get_representation(row, vector)
+                content['index'] = index + 1
+                data.append(content)
 
         return pd.DataFrame(data)
 
@@ -97,5 +101,4 @@ class Embeddings(object):
                    f"GenProx: {row.genprox}<br>" +
                    f"n_words {row.length}<br>')") for row in dataset.itertuples()]
 
-        ddo_sense = [get_main_sense(row.sense) for row in dataset.itertuples()]
-        return senses_2dim, list(dataset['cor']), labels, list(dataset['score']), ddo_sense
+        return senses_2dim, list(dataset['cor']), labels, list(dataset['score']), list(dataset['index'])

@@ -474,7 +474,7 @@ class DataSet(List):
 
         if 'bert' in embedding_type:
             print('Calculating BERT embeddings')
-            annotations['bert'] = annotations.apply(lambda row: embedding_type['bert'].get_bert_embedding(row),
+            annotations['bert'] = annotations.apply(lambda row: embedding_type['bert'].get_bert_embedding(row, token=True),
                                                     axis=1)
             print('Added BERT embeddings')
         if 'word2vec' in embedding_type:

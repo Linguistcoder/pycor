@@ -17,69 +17,65 @@ class Sense_Selection_Data(List):
         else:
             super().__init__(self.single_row(data, tokenizer))
 
-    @staticmethod
-    def truncate_pair_to_max_length(tokens_a, tokens_b, max_length):
-        total_length = len(tokens_a) + len(tokens_b)
-        while total_length > max_length:
-            total_length = len(tokens_a) + len(tokens_b)
-            if total_length <= max_length:
-                break
-            if len(tokens_a) > len(tokens_b):
-                tokens_a.pop()
-            else:
-                tokens_b.pop()
+    def truncate_pair_to_max_length(self, tokens):
+        first_sep = tokens.token_type_ids.index(1)
+        tokens_a = {'input_ids': tokens.input_ids[:first_sep - 1],
+                    'token_type_ids': tokens.token_type_ids[:first_sep - 1],
+                    'attention_mask': tokens.attention_mask[:first_sep - 1]}
 
-    @staticmethod
-    def truncate_to_max_length(tokens_a, max_length):
-        total_length = len(tokens_a)
-        while total_length > max_length:
-            total_length = len(tokens_a)
-            if total_length <= max_length:
-                break
-            tokens_a.pop()
+        tokens_b = {'input_ids': tokens.input_ids[first_sep:-1],
+                    'token_type_ids': tokens.token_type_ids[first_sep:-1],
+                    'attention_mask': tokens.attention_mask[first_sep:-1]}
+
+        total_length = len(tokens_a['input_ids']) + len(tokens_b['input_ids'])
+
+        while total_length > self.max_seq_length - 2:
+            total_length = len(tokens_a['input_ids']) + len(tokens_b['input_ids'])
+
+            if total_length <= self.max_seq_length - 2:
+                tokens.input_ids = tokens_a['input_ids'] + [3] + tokens_b['input_ids'] + [3]
+                tokens.token_type_ids = tokens_a['token_type_ids'] + [0] + tokens_b['token_type_ids'] + [1]
+                tokens.attention_mask = tokens_a['attention_mask'] + [1] + tokens_b['attention_mask'] + [1]
+                return tokens
+
+            if len(tokens_a) > len(tokens_b):
+                tokens_a['input_ids'].pop()
+                tokens_a['token_type_ids'].pop()
+                tokens_a['attention_mask'].pop()
+            else:
+
+                tokens_b['input_ids'].pop()
+                tokens_b['token_type_ids'].pop()
+                tokens_b['attention_mask'].pop()
 
     def load_reduction_data(self, data, tokenizer):
         datapoints = []
         BertInput = namedtuple("BertInput", ["lemma", "row",
-                                             "input_ids", "input_mask",
+                                             "input_ids", "attention_mask",
                                              "segment_ids", "label_id"])
 
         for row in data.itertuples():
             pairs = []
-            tokens_a = tokenizer.tokenize(row.sentence_1)
-            tokens_b = tokenizer.tokenize(row.sentence_2)
+            tokens = tokenizer(row.sentence_1, row.sentenc2)
 
-            self.truncate_pair_to_max_length(tokens_a, tokens_b, self.max_seq_length - 3)
-
-            # add first sentence
-            tokens_sent_1 = tokens_a + ['[SEP]']
-            sent_1_ids = [0] * len(tokens_sent_1)
-
-            # add secound sentence
-            tokens_sent_2 = tokens_b + ['[SEP]']
-            sent_2_ids = [1] * (len(tokens_sent_2))
-
-            all_tokens = ['[CLS]'] + tokens_sent_1 + tokens_sent_2
-            ids = [1] + sent_1_ids + sent_2_ids
-
-            input_ids = tokenizer.convert_tokens_to_ids(all_tokens)
-            input_mask = [1 if self.mask_zero_padding else 0] * len(input_ids)
+            if len(tokens.input_ids) > self.max_seq_length:
+                tokens = self.truncate_pair_to_max_length(tokens)
 
             # Zero pad to the max_seq_length.
-            pad_length = self.max_seq_length - len(input_ids)
+            pad_length = self.max_seq_length - len(tokens.input_ids)
 
-            input_ids = input_ids + ([self.pad_token] * pad_length)
-            input_mask = input_mask + ([0 if self.mask_zero_padding else 1] * pad_length)
-            segment_ids = ids + ([0] * pad_length)
+            input_ids = tokens.input_ids + ([self.pad_token] * pad_length)
+            attention_mask = tokens.attention_mask + ([0 if self.mask_zero_padding else 1] * pad_length)
+            segment_ids = tokens.token_type_ids + ([0] * pad_length)
 
             assert len(input_ids) == self.max_seq_length
-            assert len(input_mask) == self.max_seq_length
+            assert len(attention_mask) == self.max_seq_length
             assert len(segment_ids) == self.max_seq_length
 
             pairs.append(BertInput(lemma=row.lemma,
                                    row=row.Index,
                                    input_ids=input_ids,
-                                   input_mask=input_mask,
+                                   attention_mask=attention_mask,
                                    segment_ids=segment_ids,
                                    label_id=row.label))
 
@@ -89,42 +85,35 @@ class Sense_Selection_Data(List):
 
     def single_row(self, row, tokenizer):
         BertInput = namedtuple("BertInput", ["lemma", "onto", "COR", "DDO",
-                                             "wcl", "input_ids", "input_mask",
+                                             "wcl", "input_ids", "attention_mask",
                                              "segment_ids"])
         datapoints = []
 
-        tokens_a = tokenizer.tokenize(row.ddo_definition)
-        self.truncate_to_max_length(tokens_a, self.max_seq_length - 3)
+        tokens = tokenizer(row.citat)
 
-        # add first sentence
-        tokens_sent_1 = tokens_a + ['[SEP]']
-        sent_1_ids = [0] * len(tokens_sent_1)
+        if len(tokens.input_ids) > self.max_seq_length:
+            tokens.input_ids = tokens.input_ids[:self.max_seq_length - 1] + [3]
+            tokens.token_type_ids = tokens.token_type_ids[:self.max_seq_length - 1] + [0]
+            tokens.attention_mask = tokens.attention_mask[:self.max_seq_length - 1] + [1]
 
-        all_tokens = ['[CLS]'] + tokens_sent_1
-        ids = [1] + sent_1_ids
+        # Zero pad to the max_seq_length
+        pad_length = self.max_seq_length - len(tokens.input_ids)
 
-        input_ids = tokenizer.convert_tokens_to_ids(all_tokens)
-
-        input_mask = [1 if self.mask_zero_padding else 0] * len(input_ids)
-
-        # Zero pad to the max_seq_length.
-        pad_length = self.max_seq_length - len(input_ids)
-
-        input_ids = input_ids + ([self.pad_token] * pad_length)
-        input_mask = input_mask + ([0 if self.mask_zero_padding else 1] * pad_length)
-        segment_ids = ids + ([0] * pad_length)
+        input_ids = tokens.input_ids + ([self.pad_token] * pad_length)
+        attention_mask = tokens.attention_mask + ([0 if self.mask_zero_padding else 1] * pad_length)
+        segment_ids = tokens.token_type_ids + ([0] * pad_length)
 
         assert len(input_ids) == self.max_seq_length
-        assert len(input_mask) == self.max_seq_length
+        assert len(attention_mask) == self.max_seq_length
         assert len(segment_ids) == self.max_seq_length
 
         datapoints.append(BertInput(lemma=row.ddo_lemma,
                                     onto=row.cor_onto,
-                                    COR=row.cor,
+                                    COR=row.cor_bet_inventar,
                                     DDO=row.ddo_betyd_nr,
                                     wcl=row.ddo_ordklasse,
                                     input_ids=input_ids,
-                                    input_mask=input_mask,
+                                    attention_mask=attention_mask,
                                     segment_ids=segment_ids))
 
         return datapoints
