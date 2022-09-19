@@ -134,6 +134,7 @@ class BERT(BertPreTrainedModel):
                 input_ids = torch.tensor(batch.input_ids)
 
                 if token:
+                    print(batch.lemma)
                     tgt_token_ids = get_token_repr_idx(input_ids.unsqueeze(0))
 
 
