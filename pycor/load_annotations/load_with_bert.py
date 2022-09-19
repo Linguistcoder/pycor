@@ -91,6 +91,8 @@ class Sense_Selection_Data(List):
 
         for citat in row.citat.split('||'):
             tokens = tokenizer(citat)
+            if len(tokens.input_ids) < 3:
+                continue
 
             if len(tokens.input_ids) > self.max_seq_length:
                 tokens.input_ids = tokens.input_ids[:self.max_seq_length - 1] + [3]
