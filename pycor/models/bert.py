@@ -1,3 +1,4 @@
+import numpy as np
 from transformers import BertPreTrainedModel, BertModel, BertTokenizer
 import torch
 from torch.utils.data import DataLoader
@@ -127,6 +128,9 @@ class BERT(BertPreTrainedModel):
 
     def get_bert_embedding(self, row, token=True):
         bert_data = SentDataset(Sense_Selection_Data(row, self.tokenizer, data_type='single'))
+
+        if len(bert_data) < 1:
+            return np.nan
 
         self.eval()
         with torch.no_grad():
