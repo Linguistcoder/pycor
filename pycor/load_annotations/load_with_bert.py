@@ -38,12 +38,11 @@ class Sense_Selection_Data(List):
                 tokens.attention_mask = tokens_a['attention_mask'] + [1] + tokens_b['attention_mask'] + [1]
                 return tokens
 
-            if len(tokens_a) > len(tokens_b):
+            if len(tokens_a['input_ids']) > len(tokens_b['input_ids']):
                 tokens_a['input_ids'].pop()
                 tokens_a['token_type_ids'].pop()
                 tokens_a['attention_mask'].pop()
             else:
-
                 tokens_b['input_ids'].pop()
                 tokens_b['token_type_ids'].pop()
                 tokens_b['attention_mask'].pop()
