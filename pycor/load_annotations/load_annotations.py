@@ -4,7 +4,7 @@ import random
 
 random.seed(81)
 
-def read_anno(anno_file: str, quote_file: str, keyword_file: str, columns=None, annotated=False) -> pd.DataFrame:
+def read_anno(anno_file: str, quote_file: str, keyword_file: str, columns=None, annotated=True) -> pd.DataFrame:
 
     if columns is None:
         columns = []

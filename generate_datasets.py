@@ -81,12 +81,12 @@ if __name__ == "__main__":
         config_name = "config_model"
         config = load_obj(config_name, load_json=True, path=config_path)
 
-        #print('Loading word2vec model')
-        #model_path = config['model_paths']['word2vec']
-        #word2vec = word2vec_model.load_word2vec_format(model_path,
-        #                                               fvocab=model_path + '.vocab',
-        #                                               binary=False)
-        #print('Loaded word2vec model')
+        print('Loading word2vec model')
+        model_path = config['model_paths']['word2vec']
+        word2vec = word2vec_model.load_word2vec_format(model_path,
+                                                       fvocab=model_path + '.vocab',
+                                                       binary=False)
+        print('Loaded word2vec model')
 
         print('Loading BERT')
         bert_model = 'Maltehb/danish-bert-botxo'
@@ -94,10 +94,10 @@ if __name__ == "__main__":
         # config_bert = BertConfig.from_pretrained(bert_model, num_labels=2)
         bert = BertSense.from_pretrained(bert_model)
         bert.load_tokenizer(bert_model)
-        #bert.load_checkpoint(config['model_paths']['bert'])
+        bert.load_checkpoint(config['model_paths']['bert'])
         bert.to(device)
 
-        models = {'bert': bert} #, 'word2vec': word2vec}
+        models = {'bert': bert, 'word2vec': word2vec}
 
         if run_type == 'c' or run_type == 'create':
             infos = ['cosine', 'bert', 'onto', 'main_sense', 'figurative']
