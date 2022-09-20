@@ -92,35 +92,38 @@ class Sense_Selection_Data(List):
                                              "segment_ids"])
         datapoints = []
 
-        for citat in row.citat.split('||'):
-            tokens = tokenizer(citat)
-            if len(tokens.input_ids) < 3:
-                continue
+        #tokens_a = tokenizer.tokenize(row.ddo_definition)
 
-            if len(tokens.input_ids) > self.max_seq_length:
-                tokens.input_ids = tokens.input_ids[:self.max_seq_length - 1] + [3]
-                tokens.token_type_ids = tokens.token_type_ids[:self.max_seq_length - 1] + [0]
-                tokens.attention_mask = tokens.attention_mask[:self.max_seq_length - 1] + [1]
+        #for citat in row.citat.split('||'):
+        #tokens = tokenizer(citat)
+        tokens = tokenizer(row.ddo_definition)
+        #if len(tokens.input_ids) < 3:
+        #    continue
 
-            # Zero pad to the max_seq_length
-            pad_length = self.max_seq_length - len(tokens.input_ids)
+        if len(tokens.input_ids) > self.max_seq_length:
+            tokens.input_ids = tokens.input_ids[:self.max_seq_length - 1] + [3]
+            tokens.token_type_ids = tokens.token_type_ids[:self.max_seq_length - 1] + [0]
+            tokens.attention_mask = tokens.attention_mask[:self.max_seq_length - 1] + [1]
 
-            input_ids = tokens.input_ids + ([self.pad_token] * pad_length)
-            attention_mask = tokens.attention_mask + ([0 if self.mask_zero_padding else 1] * pad_length)
-            segment_ids = tokens.token_type_ids + ([0] * pad_length)
+        # Zero pad to the max_seq_length
+        pad_length = self.max_seq_length - len(tokens.input_ids)
 
-            assert len(input_ids) == self.max_seq_length
-            assert len(attention_mask) == self.max_seq_length
-            assert len(segment_ids) == self.max_seq_length
+        input_ids = tokens.input_ids + ([self.pad_token] * pad_length)
+        attention_mask = tokens.attention_mask + ([0 if self.mask_zero_padding else 1] * pad_length)
+        segment_ids = tokens.token_type_ids + ([0] * pad_length)
 
-            datapoints.append(BertInput(lemma=row.ddo_lemma,
-                                        onto=row.cor_onto,
-                                        COR=row.cor_bet_inventar,
-                                        DDO=row.ddo_betyd_nr,
-                                        wcl=row.ddo_ordklasse,
-                                        input_ids=input_ids,
-                                        attention_mask=attention_mask,
-                                        segment_ids=segment_ids))
+        assert len(input_ids) == self.max_seq_length
+        assert len(attention_mask) == self.max_seq_length
+        assert len(segment_ids) == self.max_seq_length
+
+        datapoints.append(BertInput(lemma=row.ddo_lemma,
+                                    onto=row.cor_onto,
+                                    COR=row.cor_bet_inventar,
+                                    DDO=row.ddo_betyd_nr,
+                                    wcl=row.ddo_ordklasse,
+                                    input_ids=input_ids,
+                                    attention_mask=attention_mask,
+                                    segment_ids=segment_ids))
 
         return datapoints
 
