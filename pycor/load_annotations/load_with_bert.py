@@ -136,7 +136,7 @@ def collate_batch(batch):
 
         for i, bert_input in enumerate(sub_batch):
             id_collated[i] = torch.tensor(bert_input.input_ids, dtype=torch.long)
-            mask_collated[i] = torch.tensor(bert_input.input_mask, dtype=torch.long)
+            mask_collated[i] = torch.tensor(bert_input.attention_mask, dtype=torch.long)
             segment_collated[i] = torch.tensor(bert_input.segment_ids, dtype=torch.long)
             label_collated[i] = torch.tensor(bert_input.label_id, dtype=torch.long)
 
