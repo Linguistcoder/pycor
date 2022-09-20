@@ -13,14 +13,14 @@ import plotly.express as px
 RANDOM_STATE = 1
 np.random.seed(RANDOM_STATE)
 
-subset = 'mellem'
+subset = 'keywords'
 split = 'train'
 
-subset2 = 'mellem'
+subset2 = 'keywords'
 split2 = 'test'
 
-wcl = 'vb.'
-n_s = 3
+wcl = 'sb.'
+#n_s = 3
 # lemma ordklasse homnr bet_1 bet1_id bet_2 bet2_id cosine bert onto main_sense figurative label
 
 dataset = pd.read_csv(f'../../data/{subset}_{split}_feature_dataset.tsv', '\t', encoding='utf8', header=0)
@@ -28,7 +28,7 @@ dataset['n_sense'] = dataset.groupby(by=['lemma', 'ordklasse', 'homnr'])['homnr'
 
 dataset = dataset.dropna()
 dataset = dataset[dataset['ordklasse'] == wcl]
-dataset = dataset[dataset['n_sense'] == n_s]
+#dataset = dataset[dataset['n_sense'] == n_s]
 
 group = dataset.groupby('label')
 balanced_data = group.apply(lambda x:
@@ -39,15 +39,15 @@ dataset2 = pd.read_csv(f'../../data/{subset2}_{split2}_feature_dataset.tsv', '\t
 dataset2['n_sense'] = dataset2.groupby(by=['lemma', 'ordklasse', 'homnr'])['homnr'].transform(lambda x: x.shape[0])
 dataset2 = dataset2.dropna()
 dataset2 = dataset2[dataset2['ordklasse'] == wcl]
-dataset2 = dataset2[dataset2['n_sense'] == n_s]
+#dataset2 = dataset2[dataset2['n_sense'] == n_s]
 
 
-train, test = train_test_split(balanced_data, test_size=0.2, random_state=RANDOM_STATE)
+#train, test = train_test_split(balanced_data, test_size=0.2, random_state=RANDOM_STATE)
 # train, test = train_test_split(dataset, test_size=0.5)
 # X_train, X_test, y_train, y_test = train_test_split(dataset, test_size=0.2)
 
-#train = balanced_data.copy()
-#test = dataset2.copy()
+train = balanced_data.copy()
+test = dataset2.copy()
 
 X = train.loc[:, ['cosine',
                   'bert',
@@ -91,15 +91,17 @@ for classifier in classifiers:
     # train.to_csv('../../var/log_proba_train_semi.tsv', sep='\t', encoding='utf8')
     print(accuracy_score(y, pred_train))
     print(f1_score(y, pred_train))
+    train['pred'] = pred_train.tolist()
 
     cm = confusion_matrix(y, pred_train)
     cm.diagonal()
-    #print(cm)
+    print(cm)
 
     pred_test = classifier.predict(teX)
     test.loc[:, 'proba'] = classifier.predict_proba(teX)[:, 1]
     test.to_csv(f'../../var/log_proba_{subset}_{split}.tsv', sep='\t', encoding='utf8')
 
+    test['pred'] = pred_test.tolist()
     print(accuracy_score(tey, pred_test))
     print(f1_score(tey, pred_test))
 
@@ -107,9 +109,14 @@ for classifier in classifiers:
     cm.diagonal()
     print(cm)
 
-ones = dataset.loc[dataset['label']==1]
-zeros = dataset.loc[dataset['label']==0]
-#
+ones = test.loc[test['label'] == 1]
+zeros = test.loc[test['label'] == 0]
+
+false_pos = ones[ones['pred'] == 0]
+false_neg = zeros[zeros['pred'] == 1]
+
+false_pos.to_csv(f'../../var/false_pos_{subset2}_{split2}.tsv', '\t', encoding='utf8',)
+false_neg.to_csv(f'../../var/false_neg_{subset2}_{split2}.tsv', '\t', encoding='utf8',)
 #
 # print(ones['score'].mean())
 # print(zeros['score'].mean())

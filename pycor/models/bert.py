@@ -167,7 +167,7 @@ class BERT(BertPreTrainedModel):
 
                 embedding = output.squeeze().detach().cpu().numpy()
 
-        return embedding
+        return embedding.tolist()
 
 
 class BertSense(BERT):
