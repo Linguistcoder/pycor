@@ -57,7 +57,7 @@ class Sense_Selection_Data(List):
         for row in data.itertuples():
             pairs = []
 
-            if len(row.sentence_1) < 2 or len(row.sentence_1) < 2:
+            if len(row.sentence_1) < 2 or len(row.sentence_2) < 2:
                 continue
 
             tokens = tokenizer(row.sentence_1, row.sentence_2)
