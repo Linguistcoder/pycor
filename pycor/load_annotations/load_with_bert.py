@@ -56,7 +56,7 @@ class Sense_Selection_Data(List):
 
         for row in data.itertuples():
             pairs = []
-            tokens = tokenizer(row.sentence_1, row.sentenc2)
+            tokens = tokenizer(row.sentence_1, row.sentence_2)
 
             if len(tokens.input_ids) > self.max_seq_length:
                 tokens = self.truncate_pair_to_max_length(tokens)
