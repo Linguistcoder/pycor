@@ -96,7 +96,7 @@ class Sense_Selection_Data(List):
 
         #for citat in row.citat.split('||'):
         #tokens = tokenizer(citat)
-        tokens = tokenizer(row.ddo_definition)
+        tokens = tokenizer('[TGT]' + row.ddo_lemma + '[TGT]' + row.ddo_definition)
         #if len(tokens.input_ids) < 3:
         #    continue
 
