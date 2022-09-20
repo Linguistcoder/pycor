@@ -14,29 +14,46 @@ annotations = annotations_to_embeddings('data/hum_anno/all_09_06_2022.txt',
 
 colorscales = px.colors.named_colorscales()
 
+
 # fig.show()
 
 def plotly_senses(lemmas: list, model_name: str, scale, data=annotations):
-
     senses, lemmas, labels, scores, cor_sense = data.get_2d_representations_from_lemmas(lemmas, model_name)
+
+    layout = go.Layout(
+        autosize=False,
+        width=1000,
+        height=800,
+
+        margin=go.layout.Margin(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        )
+    )
 
     fig = go.Figure(data=[go.Scatter(x=senses[:, 0].reshape(-1),
                                      y=senses[:, 1].reshape(-1),
                                      mode='markers',
                                      marker=dict(size=[s * 2 + 4 if s != 0 else 6 for s in scores],
                                                  # color=[i * 0 if i == 1 else i for i in lengths],
-                                                 color=[c/10 for c in cor_sense],
+                                                 color=[int(c) / 10 for c in lemmas],
                                                  colorscale=scale,
                                                  cmin=1),
-                                     text=labels)])
-    #fig.update_layout(
+                                     text=labels)],
+                    layout=layout
+                    )
+
+    # fig.update_layout(
     #    width=600,
     #   height=600)
 
-    #fig.update_xaxes(
+    # fig.update_xaxes(
     #     tickvals=[-7, -6, -5, -4, -3, -2, -1, -0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     #               20])
-    #fig.update_yaxes(tickvals=[-8, -7, -6, -5, -4, -3, -2, -1, -0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    # fig.update_yaxes(tickvals=[-8, -7, -6, -5, -4, -3, -2, -1, -0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 
     return fig
 
@@ -53,15 +70,11 @@ app.layout = html.Div([
     dcc.Input(
         id="lemma",
         type="text",
-        value="bank, fabrik, skole, opera, parlament, vinhus, cirkus"),
-    dcc.Input(
-        id="ordklasse",
-        type="text",
-        value="sb., sb., sb., sb., sb., sb., sb."),
+        value="ansigt"),  # "bank, fabrik, skole, opera, parlament, vinhus, cirkus"
     dcc.Input(
         id="homnr",
         type="text",
-        value='1, 1, 1, 1, 1, 1, 1'),
+        value='1'),
     dcc.Input(
         id="model_name",
         type="text",
@@ -78,15 +91,13 @@ app.layout = html.Div([
     Output("graph", "figure"),
     Input("colorscale", "value"),
     Input("lemma", "value"),
-    Input("ordklasse", "value"),
     Input("homnr", "value"),
     Input("model_name", "value"),
 )
-def change_colorscale(scale, lemma, ordklasse, homnr, model_name):
+def change_colorscale(scale, lemma, homnr, model_name):
     lemma = lemma.split(', ')
-    ordklasse = ordklasse.split(', ')
     homnr = [int(hom) for hom in homnr.split(', ')]
-    data = zip(lemma, ordklasse, homnr)
+    data = zip(lemma, homnr)
     fig = plotly_senses(lemmas=data,
                         model_name=model_name, scale=scale)
     return fig

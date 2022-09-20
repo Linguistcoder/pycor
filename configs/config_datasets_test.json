@@ -1,0 +1,11 @@
+{
+  "cbc": {
+    "file": "data/hum_anno/test.txt",
+    "quote": "data/citat/citater_ren.tsv",
+    "keyword": "",
+    "sample_size": 0.6,
+    "bias": 1,
+    "subsample_size": 0.5,
+    "sub_bias": 0
+  }
+}
