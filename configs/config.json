@@ -22,5 +22,10 @@
       "sample_size": 0.5,
       "bias": 0
     }
-  ]
+  ],
+  "models": {
+    "bert": "pycor/models/checkpoints/model_0.pt",
+    "word2vec": "data/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors",
+    "save_path": "var/"
+  }
 }

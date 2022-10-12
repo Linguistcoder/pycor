@@ -1,8 +1,8 @@
 {
   "input_data": {
-    "file": "data/no_anno/cor_s_9_dannet_ro.txt",
+    "file": "data/no_anno/test_1.txt",
     "quote": "",
-    "keyword": ""
+    "dataset_name":"udtraek_9_autoannoteret"
   },
 
     "model_paths": {

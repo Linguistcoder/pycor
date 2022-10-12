@@ -1,15 +1,17 @@
 import pandas as pd
 import numpy as np
 from sklearn import metrics
+
 model = 'base'
 subset = 'keywords_test'
+latest_version = '18_08_22'
 
 clusters = pd.read_csv(f'../../var/clusters_{model}_{subset}.tsv', sep='\t')
 #clusters = clusters[clusters['wcl'] == 'sb.']
 
 
 if 'cbc' in subset:
-    annotated = pd.read_csv('../../data/hum_anno/04_03_2022.txt',
+    annotated = pd.read_csv(f'../../data/hum_anno/udtraek_1_{latest_version}.tsv',
                             sep='\t',
                             encoding='utf-8',
                             na_values=['n', ' '],
@@ -22,8 +24,7 @@ if 'cbc' in subset:
     annotated['ddo_homnr'] = annotated['ddo_homnr'].fillna(1)
     annotated.columns = ['entryid', 'lemma', 'homnr', 'wcl', 'DDO', 'COR']
 else:
-
-    annotated = pd.read_csv(f'../../data/hum_anno/{subset.split("_")[0]}_18_08_22.tsv',
+    annotated = pd.read_csv(f'../../data/hum_anno/{subset.split("_")[0]}_{latest_version}.tsv',
                             sep='\t',
                             encoding='utf-8',
                             na_values=['n', ' '],
@@ -36,8 +37,7 @@ else:
     annotated['ddo_homnr'] = annotated['ddo_homnr'].fillna(1)
 
     annotated.columns = ['entryid', 'lemma', 'homnr', 'wcl', 'DDO', 'COR']
-    # uncomment if mellemfrekvent
-    #annotated.columns = ['entryid', 'lemma', 'DDO', 'wcl', 'COR', 'homnr']
+
 
 annotated['homnr'] = annotated['homnr'].astype('int64')
 clusters['homnr'] = clusters['homnr'].astype('int64')
@@ -87,7 +87,8 @@ def fix_order(l1, l2):
         print('ER')
 
 rand_scores = []
-for name, group in annotated.groupby(['lemma', 'wcl', 'homnr']):
+
+for name, group in annotated.groupby(['lemma', 'homnr']):
     rand_scores.append(metrics.rand_score(group['COR'], group['cor']))
     lemma = name[0]
     pred_groups = group.groupby('cor').groups
@@ -137,15 +138,3 @@ print('reduce:', correct_n / total_n)
 print('single', correct_assign/total_assign)
 print('multi:', multi_assign / total_multi)
 print('any', any_assign / total_assign)
-
-# print(merge_bias)
-# print(merge_bias_n)
-# print(split_bias)
-# print(split_bias_n)
-
-# print(correct_n)
-# print(total_n)
-# print(correct_assign)
-#print(total_assign)
-# print(multi)
-# print(total_multi+total_assign)

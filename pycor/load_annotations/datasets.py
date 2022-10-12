@@ -7,6 +7,53 @@ from pycor.utils import preprocess
 
 
 class DataSet(List):
+    """
+    Class for dataset creation for sense reduction and related tasks.
+
+    The class can create following datasets for sense reduction:
+        - textbased_only:
+        - rulebased_only:
+        - feature:
+        - bert_reduction:
+    In common for these datasets are that all of them creates sense pairs for each lemma. Rulebased and feature returns
+    scores, while textbased_only and bert_reduction prepares the data for word2vec and BERT respectively.
+
+    sense_selection creates a dataset for fine-tuning a BERT.
+    generate_embeddings adds sense embeddings (word2vec or BERT)
+
+    Attributes
+    ----------
+    :attr dataset_type: (str) dataset_type (textbased_only, rulebased_only, feature, bert_reduction, etc.)
+    :attr max_sense_limit: (int) max number of senses for each lemma
+    :attr wordclass: (str) whether to include all word classes ('all'), only nouns ('sb.'), only verbs ('vb.'),
+                           or only adjectives ('adj.')
+
+    Methods
+    -------
+    generate_textbased_only_dataset(self, annotations)
+        :returns: a paired word sense dataset based on textual data (bow or definitions)
+
+    generate_rulebased_only_dataset(self, annotations: pd.DataFrame)
+        :returns: a paired word sense dataset based on COR principles
+
+    generate_feature_dataset(self, annotations: pd.DataFrame, infotypes, embedding_type)
+        :returns: a paired word sense feature vector dataset
+
+    generate_bert_reduction_dataset(self, annotations, sentence_type)
+        :returns: a paired word sense dataset for reducing senses using BERT.
+
+    generate_sense_selection_dataset(self, annotations: pd.DataFrame, sentence_type)
+        :returns: a Sense Selection dataset (for BERT fine-tuning) from a Dataframe with annotations
+
+    generate_embeddings(self, annotations, embedding_type, output_path)
+        :returns: annotation with embeddings for each sense (row) using the embeddings type
+
+    to_dataframe(self):
+        :returns: self as pd.DataFrame
+
+    to_tsv(self, filename):
+        :returns: None (saves self as .tsv at filename)
+    """
     def __init__(self, data, dataset_type, **kwargs):
         super().__init__()
         self.dataset_type = dataset_type
@@ -26,7 +73,7 @@ class DataSet(List):
 
         elif dataset_type == 'feature':
             infotypes = kwargs.get('infotypes', [])
-            embeddings = kwargs.get('embedding_type', ['word2vec'])
+            embeddings = kwargs.get('embedding_type', [])
             self.generate_feature_dataset(data, infotypes, embeddings)
 
         elif dataset_type == 'bert_reduction':
@@ -34,38 +81,57 @@ class DataSet(List):
             self.generate_bert_reduction_dataset(data, sents)
 
         elif dataset_type == 'generate_embeddings':
-            embeddings = kwargs.get('embedding_type', ['word2vec'])
+            embeddings = kwargs.get('embedding_type', [])
             output_path = kwargs.get('output_path', 'var/')
             self.generate_embeddings(data, embeddings, output_path)
 
-    def generate_grouped_data(self, groupby):
-        pass
-
     def generate_textbased_only_dataset(self, annotations: pd.DataFrame):
+        """Create a paired word sense dataset based on textual data (bow or definitions)
 
+        Each output row contains a
+        - [0] target lemma,
+        - [1] word class,
+        - [2] homonym number
+        - [3] dictionary sense 1
+        - [4] dictionary sense 1 id
+        - [5] dictionary sense 2
+        - [6] dictionary sense 2 id
+        - [7] sentence 1
+        - [8] sentence 2
+        - [9] label
+
+        :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'ddo_definition', 'citat',
+                                                        'ddo_betyd_nr']
+        :return: List of datapoints / training instances
+        """
         instance = namedtuple('instance', ['lemma', 'ordklasse', 'homnr', 'bet_1', 'bet1_id', 'bet_2', 'bet2_id',
                                            'sentence_1', 'sentence_2', 'label'])
 
         print(f"Number of lemmas: {annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']).ngroups}")
 
-        if 'citat' in annotations:
-            annotations['citat'] = annotations.citat.apply(lambda x:
-                                                           x.replace('[TGT]', '') if isinstance(x, str) else '')
+        # cor is only present if dataset is annotated. If not, then assume cor is always 1
+        if 'cor' not in annotations:
+            annotations['cor'] = 1
 
+        # group by lemmas
         for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
             lemma = name[0].lower()
             wcl = name[1].lower()
             hom_nr = name[2]
 
+            # merge sb. pl. with sb.
             if 'pl.' in wcl:
                 wcl = wcl.replace(' pl.', '')
 
+            # only use self.wordclass in dataset
             if self.wordclass != 'all' and self.wordclass not in wcl:
                 continue
 
+            # only use data below max_sense_limit (maximum number of senses for a lemma)
             if 0 < self.max_sense_limit < len(list(group.ddo_betyd_nr.values)):
                 continue
 
+            # senses == [(sense_name, sense_id), ...]
             senses = list(zip(group.ddo_betyd_nr.values, group.ddo_dannetsemid.values))
 
             if 'bow' in group.columns:
@@ -74,22 +140,17 @@ class DataSet(List):
             else:
                 ddo_definitions = {preprocess.remove_special_char(row.ddo_definition) for row in group.itertuples()}
 
-            if 'citat' in annotations:
-                ddo_citat = {row.ddo_betyd_nr: row.citat.split('||') for row in group.itertuples() if row.citat != ''}
+            # mapping from Danish Dictionary to COR-resource
+            ddo2cor = {row.ddo_betyd_nr: row.cor for row in group.itertuples()}
 
-            ddo2cor = {row.ddo_betyd_nr: 1 for row in group.itertuples()}  # row.cor for row in group.itertuples()}
-
+            # pair up senses
             sense_pairs = set([frozenset((sens, sens2))
                                for index, sens in enumerate(senses[:-1]) for sens2 in senses[index + 1:]])
             sense_pairs = [pair for pair in sense_pairs if len(pair) > 1]
 
             for sense, sense2 in sense_pairs:
-                sentence_1 = ddo_definitions[sense[0]]  # + ddo_citat.get(sense, [])
-                sentence_2 = ddo_definitions[sense2[0]]  # + ddo_citat.get(sense2, [])
-
-                if 'citat' in annotations:
-                    sentence_1 += ddo_citat.get(sense[0], [])
-                    sentence_2 += ddo_citat.get(sense2[0], [])
+                sentence_1 = ddo_definitions[sense[0]]
+                sentence_2 = ddo_definitions[sense2[0]]
 
                 sentence_1 = ' '.join(sentence_1)
                 sentence_2 = ' '.join(sentence_2)
@@ -131,7 +192,7 @@ class DataSet(List):
         - [9] label
 
         :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'definition', 'genprox',
-                                                        'kollokation', 'cor', 'dn_id', 'ddo_nr', 'citat',
+                                                        'kollokation', 'cor', 'dn_id', 'ddo_betyd_nr', 'citat',
                                                         't_score', 'bemaerk', 'onto1', 'onto2', 'hyper', 'frame']
         :return: List of datapoints / training instances
         """
@@ -145,30 +206,38 @@ class DataSet(List):
                                      'onto', 'main_sense', 'figurative', 'ddo_dannetsemid']
                            )
 
+        # cor is only present if dataset is annotated. If not, then assume cor is always 1
+        if 'cor' not in annotations:
+            annotations['cor'] = 1
+
+        # group by lemmas
         for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
 
             lemma, wcl, homnr = name
             groupset = []
 
-            if self.wordclass != 'all' and self.wordclass not in wcl:
-                continue
-
+            # merge sb. pl. with sb.
             if 'pl.' in wcl:
                 wcl = wcl.replace(' pl.', '')
 
+            # only use self.wordclass in dataset
+            if self.wordclass != 'all' and self.wordclass not in wcl:
+                continue
+
+            # only use data below max_sense_limit (maximum number of senses for a lemma)
             if 0 < self.max_sense_limit <= len(group.index):
                 continue
 
             for row in group.itertuples():
-                figurative = row.ddo_bemaerk if type(row.ddo_bemaerk) != float else ''
+                figurative = row.bemaerk if type(row.bemaerk) != float else ''
                 word_sense = Sense(lemma=lemma,
                                    ordklasse=wcl,
                                    homnr=homnr,
                                    ddo_bet=row.ddo_betyd_nr,
-                                   cor="",  # row.cor,
-                                   onto=preprocess.clean_ontology(row.dn_onto1).union(
-                                       preprocess.clean_ontology(row.dn_onto2)),
-                                   main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
+                                   cor=row.cor,
+                                   onto=preprocess.clean_ontology(row.onto1).union(
+                                       preprocess.clean_ontology(row.onto2)),  # in case there is multiple ontos
+                                   main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),  # get main sense number
                                    figurative=1 if 'ofø' in figurative else 0,
                                    ddo_dannetsemid=row.ddo_dannetsemid
                                    )
@@ -178,10 +247,10 @@ class DataSet(List):
             for indx, sam1 in enumerate(groupset):
                 for sam2 in groupset[indx + 1:]:
                     onto_sim = sam1.onto.intersection(sam2.onto)
-                    onto_score = 1 if onto_sim == sam1.onto or onto_sim == sam2.onto else 0
-                    same_main = 1 if sam1.main_sense == sam2.main_sense else 0
-                    both_fig = preprocess.get_fig_value(sam1.figurative, sam2.figurative)
-                    label = ""  # 1 if sam1.cor == sam2.cor else 0
+                    onto_score = 1 if onto_sim == sam1.onto or onto_sim == sam2.onto else 0  # same onto
+                    same_main = 1 if sam1.main_sense == sam2.main_sense else 0  # same main sense
+                    both_fig = preprocess.get_fig_value(sam1.figurative, sam2.figurative)  # figurative val
+                    label = 1 if sam1.cor == sam2.cor else 0
                     score = 1 if same_main == 1 and both_fig == 0 and onto_score == 1 else 0
 
                     pair = Sense_pair(lemma=lemma,
@@ -215,7 +284,7 @@ class DataSet(List):
 
         :param annotations: pd.DataFrame with columns: ['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr', 'ddo_definition',
                                                         'cor', ddo_betyd_nr', 'citat', 'onto1', 'onto2', 'hyper',
-                                                        'frame', 'ddo_bemaerk']
+                                                        'frame', 'bemaerk']
         :param infotypes:
         :param embedding_type:
         :return: List of datapoints / training instances
@@ -235,18 +304,26 @@ class DataSet(List):
                            )
         annotations['cor_onto'] = annotations.apply(lambda r: str(r.onto1) + '+' + str(r.onto2), axis=1)
 
+        # cor is only present if dataset is annotated. If not, then assume cor is always 1
+        if 'cor' not in annotations:
+            annotations['cor'] = 1
+
+        # group by lemmas
         for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
 
             lemma, wcl, homnr = name
             groupset = []
 
-            if 0 < self.max_sense_limit <= len(group.index):
-                continue
-
+            # merge sb. pl. with sb.
             if 'pl.' in wcl:
                 wcl = wcl.replace(' pl.', '')
 
+            # only use self.wordclass in dataset
             if self.wordclass != 'all' and self.wordclass not in wcl:
+                continue
+
+            # only use data below max_sense_limit (maximum number of senses for a lemma)
+            if 0 < self.max_sense_limit <= len(group.index):
                 continue
 
             for row in group.itertuples():
@@ -260,9 +337,9 @@ class DataSet(List):
                                       ddo_bet=row.ddo_betyd_nr,
                                       bet_id=row.sense_id,
                                       word2vec=embedding_type['word2vec']
-                                      .embed(embedding_type['word2vec'].tokenizer(row.bow)),
+                                      .embed(embedding_type['word2vec'].tokenizer(row.bow)),  # embed with word2vec
                                       bert=[sent for sent in ('[TGT] ' + row.ddo_definition, row.citat)
-                                            if type(sent) is not float],
+                                            if type(sent) is not float],  # sentences for BERT
                                       onto=onto,
                                       main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
                                       figurative=1 if 'ofø' in figurative else 0))
@@ -303,8 +380,7 @@ class DataSet(List):
             - [2] a sense quote for each sense in the inventory (list), [3] the sense name in the inventory (list),
             - [4] and the index of the correct sense in the list of senses
 
-        :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'definition', 'cor', 'citat',
-                                                        'konbet', 'encykl']
+        :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'ddo_definition', 'cor', 'citat']
         :param sentence_type: whether to include quotes, definitions, or both in examples.
         :return: List of datapoints / training instances
         """
@@ -324,21 +400,26 @@ class DataSet(List):
 
         print(f"Number of lemmas: {annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']).ngroups}")
 
+        # group by lemmas
         for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
             definitions = {}
             examples = {}
             lemma = name[0].lower()
             wcl = name[1].lower()
 
-            if self.wordclass != 'all' and self.wordclass not in wcl:
-                continue
-
-            if 0 < self.max_sense_limit < len(list(group.ddo_nr.values)):
-                continue
-
+            # merge sb. pl. with sb.
             if 'pl.' in wcl:
                 wcl = wcl.replace(' pl.', '')
 
+            # only use self.wordclass in dataset
+            if self.wordclass != 'all' and self.wordclass not in wcl:
+                continue
+
+            # only use data below max_sense_limit (maximum number of senses for a lemma)
+            if 0 < self.max_sense_limit <= len(group.index):
+                continue
+
+            # group by cor senses
             for cor, sense_group in group.groupby('cor'):
                 definitions[f'COR_{cor}'] = []
                 examples[f'COR_{cor}'] = []
@@ -355,7 +436,7 @@ class DataSet(List):
                             print(f'Missing citat for {lemma}: {row.ddo_definition}')
 
             # todo: optimize
-            if sentence_type == 'all' or sentence_type == 'def':
+            if sentence_type == 'all' or sentence_type == 'def':  # add definition
                 sense_count1 += len(definitions)
                 if not len(definitions) > 1:
                     monosema += 1
@@ -363,7 +444,7 @@ class DataSet(List):
                 sense_count2 += len(definitions)
 
                 for index, (s, defi) in enumerate(definitions.items()):
-                    if len(defi) > 1:
+                    if len(defi) > 1:  # if multiple definitions for same COR sense, then pair definitions
                         for extra_def in defi[1:]:
                             self.append(instance(lemma=lemma,
                                                  sentence=extra_def,
@@ -373,16 +454,15 @@ class DataSet(List):
                                                  wcl=wcl
                                                  ))
 
-            if sentence_type == 'exam':
+            if sentence_type == 'exam' or sentence_type == 'all':  # add quotes
                 sense_count1 += sum([1 for exam, examlist in examples.items() if len(examlist) > 0])
                 if not len(definitions) > 1:
                     monosema += 1
                     continue
 
-            if sentence_type == 'exam' or sentence_type == 'all':
                 for index, (s, example_list) in enumerate(examples.items()):
-                    if sentence_type == 'exam':
-                        sense_count2 += 1 if len(example_list) > 0 else 0
+                    sense_count2 += 1 if len(example_list) > 0 else 0
+
                     for example in example_list:
                         self.append(instance(lemma=lemma,
                                              sentence=example,
@@ -409,41 +489,70 @@ class DataSet(List):
         return self
 
     def generate_bert_reduction_dataset(self, annotations, sentence_type):
+        """Create a paired word sense dataset for reducing senses using BERT.
+
+        Each output row contains a
+        - [0] target lemma,
+        - [1] word class,
+        - [2] homonym number
+        - [3] dictionary sense 1
+        - [4] dictionary sense 1 id
+        - [5] dictionary sense 2
+        - [6] dictionary sense 2 id
+        - [7] sentence 1
+        - [8] sentence 2
+        - [9] label
+
+        :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'ddo_definition', 'citat',
+                                                        'ddo_betyd_nr', 'ddo_dannetsemid']
+        :return: List of datapoints / training instances
+        """
 
         instance = namedtuple('instance', ['lemma', 'ordklasse', 'homnr', 'bet_1', 'bet1_id', 'bet_2', 'bet2_id',
                                            'sentence_1', 'sentence_2', 'label'])
 
         print(f"Number of lemmas: {annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']).ngroups}")
 
+        # cor is only present if dataset is annotated. If not, then assume cor is always 1
+        if 'cor' not in annotations:
+            annotations['cor'] = 1
+
+        # groupby lemma
         for name, group in annotations.groupby(['ddo_lemma', 'ddo_ordklasse', 'ddo_homnr']):
             lemma = name[0].lower()
             wcl = name[1].lower()
             hom_nr = name[2]
 
-            if self.wordclass != 'all' and self.wordclass not in wcl:
-                continue
-
-            if 0 < self.max_sense_limit < len(list(group.ddo_betyd_nr.values)):
-                continue
-
+            # merge sb. pl. with sb.
             if 'pl.' in wcl:
                 wcl = wcl.replace(' pl.', '')
 
+            # only use self.wordclass in dataset
+            if self.wordclass != 'all' and self.wordclass not in wcl:
+                continue
+
+            # only use data below max_sense_limit (maximum number of senses for a lemma)
+            if 0 < self.max_sense_limit <= len(group.index):
+                continue
+
+            # senses == [(sense_name, sense_id), ...]
             senses = list(zip(group.ddo_betyd_nr.values, group.ddo_dannetsemid.values))
 
+            # add [TGT] to definition
             ddo_definitions = {row.ddo_betyd_nr: [f'[TGT] {lemma} [TGT] '
                                                   + preprocess.remove_special_char(row.ddo_definition)]
                                for row in group.itertuples()}
 
             if 'citat' in annotations:
-                ddo_citat = {row.ddo_nr: row.citat.split('||') for row in group.itertuples()
+                ddo_citat = {row.ddo_betyd_nr: row.citat.split('||') for row in group.itertuples()
                              if type(row.citat) == str and row.citat != '[]'}
             else:
                 ddo_citat = {}
 
-            # if label not available
-            ddo2cor = {row.ddo_betyd_nr: 1 for row in group.itertuples()}  # row.cor for row in group.itertuples()}
+            # mapping Danish Dictionary to COR-resource
+            ddo2cor = {row.ddo_betyd_nr: row.cor for row in group.itertuples()}
 
+            # pair up senses
             sense_pairs = set([frozenset((sens, sens2))
                                for index, sens in enumerate(senses[:-1]) for sens2 in senses[index + 1:]])
             sense_pairs = [pair for pair in sense_pairs if len(pair) > 1]
@@ -471,11 +580,21 @@ class DataSet(List):
         return self
 
     def generate_embeddings(self, annotations, embedding_type, output_path):
+        """
+        Generate embedding for each sense (row) in annotation using the embeddings type.
+
+        :param annotations: (pd.DataFrame) with columns: ['ddo_lemma', 'cor_onto', 'cor_bet_inventar', 'ddo_betyd_nr',
+                                                         'ddo_ordklasse', 'ddo_definition', 'citat'. 'bow']
+        :param embedding_type: (dict)
+        :param output_path:
+        :return: annotations with embeddings (as list)
+        """
 
         if 'bert' in embedding_type:
             print('Calculating BERT embeddings')
-            annotations['bert'] = annotations.apply(lambda row: embedding_type['bert'].get_bert_embedding(row, token=True),
-                                                    axis=1)
+            annotations['bert'] = annotations.apply(
+                lambda row: embedding_type['bert'].get_bert_embedding(row, token=True),
+                axis=1)
             print('Added BERT embeddings')
         if 'word2vec' in embedding_type:
             print('Calculating word2vec embeddings')
@@ -484,6 +603,9 @@ class DataSet(List):
                                                                .tokenizer(row.bow)),
                                                         axis=1)
             print('Added word2vec embeddings')
+        else:
+            raise AttributeError
+
         annotations.to_csv(f'{output_path}/annotations_with_embeddings.tsv', sep='\t', encoding='utf8')
 
         return annotations
@@ -492,4 +614,4 @@ class DataSet(List):
         return pd.DataFrame(self)
 
     def to_tsv(self, filename):
-        return self.to_dataframe().to_csv(filename, sep='\t', encoding='utf8')
+        self.to_dataframe().to_csv(filename, sep='\t', encoding='utf8')

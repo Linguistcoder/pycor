@@ -1,12 +1,23 @@
 import pandas as pd
 from pycor.utils import preprocess
+from pycor.utils.lemmatizer import form_in_sentence
 
-citater = pd.read_csv('../../data/citat/citater_mellemfrekvente.tsv',
+############# THIS SCRIPT CLEANS QUOTES #################
+# when the script is running, the user has to input the index of the target token.
+# this is a "quick solution" so the code will fail if anything but a number is inputted
+# (bad, I know, but that is how it is. I don't have time to fix it)
+
+
+input_quotes = '../../data/citat/citater_mellemfrekvente.tsv'  # quote_file to clean
+anno_file = '../../data/hum_anno/mellemfrek_18_08_22.tsv'  # annotated file
+save_path = '../../data/citat/mellem_citater_ren.tsv'  # path to save cleaned quotes
+
+citater = pd.read_csv(input_quotes,
                       sep='\t',
                       encoding='utf-8'
                       )
 
-annotated = pd.read_csv('../../data/hum_anno/mellemfrek_18_08_22.tsv',
+annotated = pd.read_csv(anno_file,
                         sep='\t',
                         encoding='utf-8',
                         na_values=['n', ' '],
@@ -18,39 +29,11 @@ annotated = pd.read_csv('../../data/hum_anno/mellemfrek_18_08_22.tsv',
 citater['ddo_dannetsemid'] = citater['ddo_dannetsemid'].astype('int64')
 
 citater = citater.merge(annotated, how='outer', on=['ddo_dannetsemid'])
-
-# extra_citat = pd.read_csv('../../data/citat/citatløs.tsv',
-#                           sep='\t',
-#                           encoding='utf-8'
-#                           )
-
-# anno = pd.read_csv('data/hum_anno/mellemfrekvente.txt',
-#                    sep='\t',
-#                    encoding='utf-8',
-#                    na_values=['n', ' '])
-#
-# citater = pd.read_csv('H:/CST_COR/data/DDO_citater/citater_mellemfrekvente.tsv',
-#                       sep='\t',
-#                       encoding='utf-8')
-
-
 citater = citater.dropna(subset=['ddo_lemma', 'ddo_dannetsemid', 'citat'])
-#extra_citat = extra_citat.dropna(subset=['ddo_lemma', 'ddo_dannetsemid', 'citat'])
 
-
-#citater = citater.merge(extra_citat,
-#                        how='outer',
-#                        on=['ddo_dannetsemid', 'ddo_lemma', 'citat']
-#                        ).loc[:,['ddo_dannetsemid', 'ddo_lemma', 'citat']]
-
-#extra_citat = extra_citat.dropna(subset=['citat2'])
-
-#for row in extra_citat.itertuples():
-#    citater = citater.append({'ddo_dannetsemid': row.ddo_dannetsemid,
-#                              'ddo_lemma': row.ddo_lemma,
-#                              'citat': row.citat2}, ignore_index=True)
-
+# clean for special characters
 citater['citat'] = citater['citat'].apply(preprocess.remove_special_char)
-citater['citat'] = citater.apply(lambda row: preprocess.form_in_sentence(row.citat, row.ddo_lemma.lower()), axis=1)
+# find the target in sentence
+citater['citat'] = citater.apply(lambda row: form_in_sentence(row.citat, row.ddo_lemma.lower()), axis=1)
 
-citater.to_csv('../../data/citat/mellem_citater_ren.tsv', sep='\t', encoding='utf8')
+citater.to_csv(save_path, sep='\t', encoding='utf8')

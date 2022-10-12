@@ -13,10 +13,10 @@ import plotly.express as px
 RANDOM_STATE = 1
 np.random.seed(RANDOM_STATE)
 
-subset = 'keywords'
+subset = 'cbc'
 split = 'train'
 
-subset2 = 'keywords'
+subset2 = 'mellem'
 split2 = 'test'
 
 wcl = 'sb.'
@@ -112,8 +112,8 @@ for classifier in classifiers:
 ones = test.loc[test['label'] == 1]
 zeros = test.loc[test['label'] == 0]
 
-false_pos = ones[ones['pred'] == 0]
-false_neg = zeros[zeros['pred'] == 1]
+false_neg = ones[ones['pred'] == 0]
+false_pos = zeros[zeros['pred'] == 1]
 
 false_pos.to_csv(f'../../var/false_pos_{subset2}_{split2}.tsv', '\t', encoding='utf8',)
 false_neg.to_csv(f'../../var/false_neg_{subset2}_{split2}.tsv', '\t', encoding='utf8',)
