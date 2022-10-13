@@ -1,77 +1,73 @@
-import pathlib
-import sys
 import argparse
+import pathlib
+from typing import List, Dict, Optional
+
 import torch
 
+from config import load_config_from_json
+from pycor.load_annotations.config import Configuration
 from pycor.load_annotations.datasets import DataSet
-from pycor.load_annotations.load_annotations import read_procssed_anno, read_anno, create_or_sample_datasets
+from pycor.load_annotations.load_annotations import create_or_sample_datasets
 from pycor.models.bert import BertSense
 from pycor.models.word2vec import word2vec_model
 from pycor.utils.save_load import load_obj
-from config import load_config_from_json
 
 
-def load_and_sample_datasets(dataset_config):
-    datasets = create_or_sample_datasets(dataset_config)
+def load_and_sample_datasets(dataset_config, save_path):
+    data = create_or_sample_datasets(dataset_config, save_path=save_path)
 
-    for subset in datasets:
-        print(f"\n______________________{subset.upper()}____________________________")
-        anno = read_procssed_anno(f"data/{subset}.tsv")
-
-        print(f'Creating sense selection dataset for {subset}.')
+    for subset_name, anno in data:
+        print(f"\n______________________{subset_name.upper()}____________________________")
+        print(f'Creating sense selection dataset for {subset_name}.')
         sense_selection = DataSet(anno, "sense_selection", sentence_type='all')
-        sense_selection.to_tsv(f"var/BERT_dataset_{subset}.tsv")
-        print(f'Creating BERT reduction dataset for {subset}.')
+        sense_selection.to_tsv(f"{save_path}BERT_dataset_{subset_name}.tsv")
+        print(f'Creating BERT reduction dataset for {subset_name}.')
         bert_reduction = DataSet(anno, "bert_reduction", sentence_type='all')
-        bert_reduction.to_tsv(f"data/reduction/reduction_{subset}.tsv")
+        bert_reduction.to_tsv(f"{save_path}reduction_{subset_name}.tsv")
 
-        if 'mellem' not in subset:
-            print(f'Creating (max 5) sense selection dataset for {subset}')
+        if 'mellem' not in subset_name:
+            print(f'Creating (max 5) sense selection dataset for {subset_name}')
             sense_selection2 = DataSet(anno, "sense_selection", sentence_type='all', max_sense=5)
-            sense_selection2.to_tsv(f"var/BERT_dataset_{subset}_less.tsv")
-            print(f'Creating (max 5) BERT reduction dataset for {subset}')
+            sense_selection2.to_tsv(f"{save_path}BERT_dataset_{subset_name}_less.tsv")
+            print(f'Creating (max 5) BERT reduction dataset for {subset_name}')
             bert_reduction2 = DataSet(anno, "bert_reduction", sentence_type='all', max_sense=5)
-            bert_reduction2.to_tsv(f"data/reduction/reduction_{subset}_less.tsv")
-            print(f'Creating (max 5) text based dataset for {subset}')
+            bert_reduction2.to_tsv(f"{save_path}reduction_{subset_name}_less.tsv")
+            print(f'Creating (max 5) text based dataset for {subset_name}')
             text_based2 = DataSet(anno, "textbased_only", max_sense=5)
-            text_based2.to_tsv(f"data/reduction/reduction_word2vec_{subset}_less.tsv")
-            print(f'Creating (max 5) rule based dataset for {subset}')
+            text_based2.to_tsv(f"{save_path}reduction_word2vec_{subset_name}_less.tsv")
+            print(f'Creating (max 5) rule based dataset for {subset_name}')
             rule_based2 = DataSet(anno, "rulebased_only", max_sense=5)
-            rule_based2.to_tsv(f"data/base/reduction_score_{subset}_less.tsv")
+            rule_based2.to_tsv(f"{save_path}reduction_score_{subset_name}_less.tsv")
 
-        print(f'Creating text based dataset for {subset}')
+        print(f'Creating text based dataset for {subset_name}')
         text_based = DataSet(anno, "textbased_only")
-        text_based.to_tsv(f"data/reduction/reduction_word2vec_{subset}.tsv")
-        print(f'Creating rule based dataset for {subset}')
+        text_based.to_tsv(f"{save_path}reduction_word2vec_{subset_name}.tsv")
+        print(f'Creating rule based dataset for {subset_name}')
         rule_based = DataSet(anno, "rulebased_only")
-        rule_based.to_tsv(f"data/base/reduction_score_{subset}.tsv")
+        rule_based.to_tsv(f"{save_path}reduction_score_{subset_name}.tsv")
+
+    return data
 
 
-def load_feature_dataset(dataset_config, infotypes, models, save_sample='data/', save_final='var/',
-                         sample=True):
+def load_feature_dataset(dataset_config: Configuration, infotypes: List, embedding_models: Dict,
+                         save_path: pathlib.Path = 'data/', data: Optional[List] = None):
+    if not data:
+        data = create_or_sample_datasets(dataset_config, sampled=False, save_path=save_path)
 
-    datasets = create_or_sample_datasets(dataset_config, sampled=sample, save_path=save_sample)
-
-    for subset in datasets:
-        anno = read_procssed_anno(f"{save_sample}{subset}.tsv")
-
-        feature_dataset = DataSet(anno, "feature", infotypes=infotypes, embedding_type=models)
-        feature_dataset.to_tsv(f"{save_final}{subset}_feature_dataset.tsv")
+    for subset, anno in data:
+        feature_dataset = DataSet(anno, "feature", infotypes=infotypes, embedding_type=embedding_models)
+        feature_dataset.to_tsv(f"{save_path}{subset}_feature_dataset.tsv")
 
 
-def generate_embeddings(filename, citat, models, save_path):
-    print("Loading data...")
-    anno = read_anno(anno_file=filename,
-                     quote_file=citat,
-                     keyword_file='',
-                     annotated=True)
+def generate_embeddings(dataset_config, embedding_models, save_path, data: Optional[List] = None):
+    if not data:
+        data = create_or_sample_datasets(dataset_config, sampled=False, save_path=save_path)
 
-    print('Data loaded.')
-
-    DataSet(anno,
-            "generate_embeddings",
-            embedding_type=models,
-            output_path=save_path)
+    for subset, anno in data:
+        DataSet(anno,
+                "generate_embeddings",
+                embedding_type=embedding_models,
+                output_path=save_path)
 
 
 if __name__ == "__main__":
@@ -80,7 +76,6 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--sample", help="create and sample datasets and save to this path", type=pathlib.Path)
     parser.add_argument("-e", "--embed", help="embed and save to this path", type=pathlib.Path)
     parser.add_argument("-f", "--feature", help="create feature dataset and save to this path", type=pathlib.Path)
-    parser.add_argument("-i", "--input_file", help="file to process", type=pathlib.Path)
     parser.add_argument("config_path", help="config path", type=pathlib.Path)
 
     args = parser.parse_args()
@@ -90,39 +85,50 @@ if __name__ == "__main__":
 
     config = load_config_from_json(config)
 
-
     if args.sample:
-        load_and_sample_datasets(config)
+        datasets = load_and_sample_datasets(config.datasets, save_path=args.sample)
 
-    if 'embed':
+    if args.embed or args.feature:
 
-        print('Loading word2vec model')
-        model_path = config.models.word2vec
-        word2vec = word2vec_model.load_word2vec_format(model_path,
-                                                       fvocab=model_path + '.vocab',
-                                                       binary=False)
-        print('Loaded word2vec model')
+        if not config.models:
+            raise AttributeError(config.models)
 
-        print('Loading BERT')
-        bert_model = 'Maltehb/danish-bert-botxo'
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        models = {}
+        infos = []
+        if config.models.word2vec:
+            print('Loading word2vec model')
+            model_path = config.models.word2vec
+            word2vec = word2vec_model.load_word2vec_format(str(model_path),
+                                                           fvocab=str(model_path) + '.vocab',
+                                                           binary=False)
+            print('Loaded word2vec model')
+            models['word2vec'] = word2vec
+            infos.append('cosine')
 
-        bert = BertSense.from_pretrained(bert_model)
-        bert.load_tokenizer(bert_model)
-        bert.load_checkpoint(config.models.bert)
-        bert.to(device)
+        if config.models.bert_name:
+            print('Loading BERT')
+            bert_model = config.models.bert_name
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            bert = BertSense.from_pretrained(bert_model)
+            bert.load_tokenizer(bert_model)
 
-        models = {'bert': bert, 'word2vec': word2vec}
+            bert.to(device)
+            models['bert'] = bert
+            infos.append('bert')
 
-        if 'feature':
-            infos = ['cosine', 'bert', 'onto', 'main_sense', 'figurative']
-            load_feature_dataset("config_datasets",
+        if args.embed:
+            generate_embeddings(config.datasets, models, save_path=args.embed)
+
+        if args.feature:
+            if config.models.bert_checkpoint:
+                bert.load_checkpoint(config.models.bert_checkpoint)
+                bert.to(device)
+                models['bert'] = bert
+            print('Loading saved BERT')
+
+            infos += ['onto', 'main_sense', 'figurative']
+
+            load_feature_dataset(config.datasets,
                                  infos,
                                  models,
-                                 save_sample=sys.argv[3],
-                                 save_final=sys.argv[4])
-
-        if 'embed':
-            filename, citat = sys.argv[3], sys.argv[4]
-            generate_embeddings(filename, citat, models, save_path=config['model_paths']['save_path'])
-            # generate_embeddings(filename, None, word2vec, save_path=config['model_paths2']['save_path'])
+                                 save_path=args.feature)

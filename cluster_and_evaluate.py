@@ -1,17 +1,21 @@
-import sys
+import argparse
 import pandas as pd
 import numpy as np
 import plotly.express as px
 from sklearn.metrics import f1_score, rand_score
 from sklearn.preprocessing import MinMaxScaler
-
-from configs.config_clustering import ClusteringConfig
 from pycor.models.clustering import ClusterAlgorithm
+from pycor.models.config import ClusteringConfig
 
 
-def do_clustering(subset_name, model_name, tune_name, binary_thres, select_wcl=None, path='../data'):
+def do_clustering(subset_name, model_name, tune_name, binary_thres=0.31, select_wcl=None, path='/data'):
     file = f'{path}/{model_name}/reduction_score_{subset_name}.tsv'
-    tune_file = f'{path}/{model_name}/reduction_score_{tune_name}.tsv'
+
+    if tune_name:
+        tune_file = f'{path}/{model_name}/reduction_score_{tune_name}.tsv'
+    else:
+        tune_file = file
+
     dataset = pd.read_csv(file, sep='\t', encoding='utf8')
     tuneset = pd.read_csv(tune_file, sep='\t', encoding='utf8')
 
@@ -94,10 +98,17 @@ def evaluate_clusters(annotated_with_clusters, model, subset):
 # devel.to_csv(f'../../var/devel_{Select}.tsv', sep='\t', encoding='utf8')
 
 if __name__ == "__main__":
-    model_name = 'base'  # 'word2vec'
-    subset_name = 'cbc_test'  # 'cbc_devel3'
-    tune_name = 'cbc_test'  # 'cbc_devel3'
-    binary_thres = 0.31
+    parser = argparse.ArgumentParser()
 
-    model_name = sys.argv[1]
-    subset_name = sys.argv[2]
+    parser.add_argument("model", type=str)
+    parser.add_argument("subset", type=str)
+    parser.add_argument("-t", "--tune", type=str)
+    parser.add_argument("-b", "--binary_thres", type=float)
+
+    args = parser.parse_args()
+
+    bin_thres = args.binary_thres if args.binary_thres else 0.5
+    clusters = do_clustering(subset_name=args.subset,
+                             model_name=args.model,
+                             tune_name=args.tune,
+                             binary_thres=bin_thres)

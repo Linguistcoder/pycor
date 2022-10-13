@@ -18,15 +18,15 @@ def load_obj(name, load_json: False, path: Optional[str] = None):
     """load obj ('var/' + name) as either pickled obj (load_json=False) or as json obj (load_json=True)"""
     if load_json:
         if path:
-            with open(path + name + '.json', 'rb') as f:
+            with open(str(path) + str(name) + '.json', 'rb') as f:
                 return json.load(f)
         else:
-            with open(name + '.json', 'rb') as f:
+            with open(str(name) + '.json', 'rb') as f:
                 return json.load(f)
     else:
         if path:
-            with open(path + name + '.pkl', 'rb') as f:
+            with open(str(path) + str(name) + '.pkl', 'rb') as f:
                 return pickle.load(f)
         else:
-            with open(name + '.pkl', 'rb') as f:
+            with open(str(name) + '.pkl', 'rb') as f:
                 return pickle.load(f)

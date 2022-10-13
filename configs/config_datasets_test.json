@@ -1,11 +1,16 @@
 {
-  "cbc": {
-    "file": "data/hum_anno/test.txt",
-    "quote": "data/citat/citater_ren.tsv",
-    "keyword": "",
-    "sample_size": 0.6,
-    "bias": 1,
-    "subsample_size": 0.5,
-    "sub_bias": 0
+  "datasets": [
+    {
+      "name": "test",
+      "file": "data/hum_anno/test_data.txt",
+      "quote": "data/citat/citater_test_ren.tsv",
+      "sample_size": 0.5,
+      "bias": 0
+    }
+  ],
+  "models": {
+    "bert_name":  "Maltehb/danish-bert-botxo",
+    "bert_checkpoint": "pycor/models/checkpoints/model_0.pt",
+    "save_path": "var/"
   }
 }

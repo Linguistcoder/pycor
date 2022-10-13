@@ -151,7 +151,7 @@ def create_or_sample_datasets(config: Configuration, sampled=True, save_path='da
     :return: list of datasets
     """
     subsets = []
-    datasets = config.datasets.datasets
+    datasets = config.datasets
 
     for dataset in datasets:
         print(f'_______________SAMPLE FOR {dataset.name}____________________')
@@ -160,7 +160,7 @@ def create_or_sample_datasets(config: Configuration, sampled=True, save_path='da
         # load annotation
         anno = read_anno(anno_file=dataset.file,
                          quote_file=dataset.quote,
-                         columns=['lobenummer', 'ddo_dannetsemid','ddo_lemma', 'ddo_ordklasse', 'ddo_homnr',
+                         columns=['lobenummer', 'ddo_dannetsemid', 'ddo_lemma', 'ddo_ordklasse', 'ddo_homnr',
                                   'ddo_definition', 'cor_bet_inventar', 'ddo_betyd_nr', 'citat', 'ddo_bemaerk',
                                   'cor_onto', 'cor_onto2', 'cor_hyper', 'cor_frame', 'ddo_konbet', 'ddo_encykl',
                                   'bow', 'length']
@@ -182,25 +182,28 @@ def create_or_sample_datasets(config: Configuration, sampled=True, save_path='da
                                             subsample_size=dataset.subsample_size,
                                             sub_bias=dataset.sub_bias
                                             )
-                train.to_csv(f'{save_path}{dataset.name}_train.tsv', sep='\t', encoding='utf8')
-                devel.to_csv(f'{save_path}{dataset.name}_devel.tsv', sep='\t', encoding='utf8')
-                test.to_csv(f'{save_path}{dataset.name}_test.tsv', sep='\t', encoding='utf8')
+                train.to_csv(f'{save_path}/{dataset.name}_train.tsv', sep='\t', encoding='utf8')
+                devel.to_csv(f'{save_path}/{dataset.name}_devel.tsv', sep='\t', encoding='utf8')
+                test.to_csv(f'{save_path}/{dataset.name}_test.tsv', sep='\t', encoding='utf8')
 
-                subsets += [f"{dataset.name}_train", f"{dataset.name}_devel", f"{dataset.name}_test"]
+                subsets += [(f"{dataset.name}_train", train),
+                            (f"{dataset.name}_devel", devel),
+                            (f"{dataset.name}_test", test)]
 
                 print(f'Saved {dataset.name} (train {len(train)}, devel {len(devel)}, test {len(test)}) to data/')
 
             else:  # just train and test
                 train, test = sample(anno, dataset.sample_size, dataset.bias)
 
-                train.to_csv(f'{save_path}{dataset.name}_train.tsv', sep='\t', encoding='utf8')
-                test.to_csv(f'{save_path}{dataset.name}_test.tsv', sep='\t', encoding='utf8')
+                train.to_csv(f'{save_path}/{dataset.name}_train.tsv', sep='\t', encoding='utf8')
+                test.to_csv(f'{save_path}/{dataset.name}_test.tsv', sep='\t', encoding='utf8')
 
-                subsets += [f"{dataset.name}_train", f"{dataset.name}_test"]
+                subsets += [(f"{dataset.name}_train", train),
+                            (f"{dataset.name}_test", test)]
 
                 print(f'Saved {dataset.name} (train {len(train)},  test {len(test)}) to data/')
         else:  # no sampling
-            anno.to_csv(f'{save_path}{dataset.name}_processed.tsv', sep='\t', encoding='utf8')
-            subsets += [f"{dataset.name}_processed"]
+            anno.to_csv(f'{save_path}/{dataset.name}_processed.tsv', sep='\t', encoding='utf8')
+            subsets += [(f"{dataset.name}_processed", anno)]
 
     return subsets

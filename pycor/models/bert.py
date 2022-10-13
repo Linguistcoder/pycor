@@ -264,8 +264,8 @@ class BertSense(BERT):
 
         self.dropout = torch.nn.Dropout(self.config.hidden_dropout_prob)
         self.relu = torch.nn.LeakyReLU()
-        self.out = torch.nn.Linear(self.config.hidden_size, 2)
-        self.softmax = torch.nn.Softmax(dim=1)
+        self.out = torch.nn.Linear(self.config.hidden_size, 1)  # Future: change to 2 and use softmax
+        self.softmax = torch.nn.Softmax(dim=1)  # not used (yet)
         self.post_init()
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
@@ -286,9 +286,9 @@ class BertSense(BERT):
         # and a linear layer
         bert_out = self.dropout(bert_out[1])
         class_out = self.out(self.relu(bert_out))
-        class_out = self.softmax(class_out)
+        #class_out = self.softmax(class_out).squeeze()[0]
 
-        return class_out.squeeze()[0]
+        return class_out.squeeze(-1)
 
 
 class BertSenseToken(BERT):

@@ -8,8 +8,8 @@ class DatasetConfig:
     name: str
     file: pathlib.Path
     quote: pathlib.Path
-    sample_size: float
-    bias: int
+    sample_size: Optional[float]
+    bias: Optional[int]
     subsample_size: Optional[float]
     sub_bias: Optional[int]
 

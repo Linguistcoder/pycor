@@ -1,9 +1,8 @@
 {
-  "input_data": {
-    "file": "data/no_anno/test_1.txt",
-    "quote": "",
-    "dataset_name":"udtraek_9_autoannoteret"
-  },
+  "datasets": [{
+    "name": "udtraek_9_autoannoteret",
+    "file": "data/no_anno/test_1.txt"
+  }]
 
     "model_paths": {
     "bert": "/content/drive/MyDrive/SPECIALE/Models/bert_model_0.pt",

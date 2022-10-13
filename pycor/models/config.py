@@ -44,7 +44,8 @@ class ClusteringConfig(object):
 @dataclass
 class Configuration:
     base: Optional[str]
-    bert: pathlib.Path
-    word2vec: pathlib.Path
+    bert_name: Optional[str]
+    bert_checkpoint: Optional[pathlib.Path]
+    word2vec: Optional[pathlib.Path]
     save_path: pathlib.Path
     clustering: Optional[ClusteringConfig]

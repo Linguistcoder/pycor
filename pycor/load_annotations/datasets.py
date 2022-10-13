@@ -54,6 +54,7 @@ class DataSet(List):
     to_tsv(self, filename):
         :returns: None (saves self as .tsv at filename)
     """
+
     def __init__(self, data, dataset_type, **kwargs):
         super().__init__()
         self.dataset_type = dataset_type
@@ -330,16 +331,21 @@ class DataSet(List):
                 figurative = row.bemaerk if type(row.bemaerk) != float else ''
                 onto = preprocess.clean_ontology(row.onto1).union(preprocess.clean_ontology(row.onto2))
 
+                bert = [sent for sent in ('[TGT] ' + row.ddo_definition, row.citat)
+                        if type(sent) is not float] \
+                    if 'bert' in embedding_type else None
+
+                word2vec = embedding_type['word2vec'].embed(embedding_type['word2vec'].tokenizer(row.bow)) \
+                    if 'word2vec' in embedding_type else None
+
                 groupset.append(Sense(lemma=lemma,
                                       ordklasse=wcl,
                                       homnr=homnr,
                                       cor=row.cor,
                                       ddo_bet=row.ddo_betyd_nr,
                                       bet_id=row.sense_id,
-                                      word2vec=embedding_type['word2vec']
-                                      .embed(embedding_type['word2vec'].tokenizer(row.bow)),  # embed with word2vec
-                                      bert=[sent for sent in ('[TGT] ' + row.ddo_definition, row.citat)
-                                            if type(sent) is not float],  # sentences for BERT
+                                      word2vec=word2vec,
+                                      bert=bert,
                                       onto=onto,
                                       main_sense=preprocess.get_main_sense(row.ddo_betyd_nr),
                                       figurative=1 if 'ofø' in figurative else 0))
@@ -352,9 +358,9 @@ class DataSet(List):
 
                     point = [lemma, wcl, homnr, sam1.ddo_bet, sam1.bet_id, sam2.ddo_bet, sam2.bet_id]
 
-                    if 'cosine' in infotypes:
+                    if 'cosine' in infotypes and 'word2vec' in embedding_type:
                         point.append(cosine(sam1.word2vec, sam2.word2vec))
-                    if 'bert' in infotypes:
+                    if 'bert' in infotypes and 'bert' in embedding_type:
                         pairs = [[sam1.lemma, sen1, sen2, 0] for sen1 in sam1.bert for sen2 in sam2.bert]
                         pairs = pd.DataFrame(pairs, columns=['lemma', 'sentence_1', 'sentence_2', 'label'])
                         score = embedding_type['bert'].get_BERT_score(pairs, 'score')
@@ -503,6 +509,7 @@ class DataSet(List):
         - [8] sentence 2
         - [9] label
 
+        :param sentence_type: use definitions, examples, or both
         :param annotations: pd.DataFrame with columns: ['lemma', 'ordklasse', homnr', 'ddo_definition', 'citat',
                                                         'ddo_betyd_nr', 'ddo_dannetsemid']
         :return: List of datapoints / training instances
@@ -586,7 +593,7 @@ class DataSet(List):
         :param annotations: (pd.DataFrame) with columns: ['ddo_lemma', 'cor_onto', 'cor_bet_inventar', 'ddo_betyd_nr',
                                                          'ddo_ordklasse', 'ddo_definition', 'citat'. 'bow']
         :param embedding_type: (dict)
-        :param output_path:
+        :param output_path: which directory to save embeddings
         :return: annotations with embeddings (as list)
         """
 
@@ -603,8 +610,6 @@ class DataSet(List):
                                                                .tokenizer(row.bow)),
                                                         axis=1)
             print('Added word2vec embeddings')
-        else:
-            raise AttributeError
 
         annotations.to_csv(f'{output_path}/annotations_with_embeddings.tsv', sep='\t', encoding='utf8')
 

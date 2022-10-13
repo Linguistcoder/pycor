@@ -1,15 +1,15 @@
 lobenummer	ddo_entryid	score	ddo_lemma	ddo_homnr	ddo_ordklasse	ddo_dannetsemid	ddo_definition	ddo_konbet	ddo_bemaerk	ddo_betyd_nr	cor_bet_inventar	hvem	kommentar	valideret	validator	validators_kommentarer	val_udtraek	cor_onto	cor_onto2	cor_sp	cor_stikord	cor_hyper	cor_frame	cor_sentiment	ddo_genprox	ddo_kollokation	ddo_sublemma	ddo_encykl	ddo_morf	ddo_valens	ddo_senselevel	ny_definition	hvem_definition
 1	1	1	A	1	sb.	1001	en definition			1	1	SN			SN			LanguageRepresentation+Artifact+Object			vokal,  selvlyd	{bogstav_1}			bogstav						1		
-2	1	1	A	1	sb.	1002	en anden definition	med konbet		2	2	SN			SN			Property			plads,  graduering,  kvalitet,  adelsmærke	"{art_1; form_1; kategori_1; slags_1; sort,1_2; type_1}"		1	betegne						1		
+2	1	1	A	1	sb.	1002	en anden definition	med konbet		2	2	SN			SN			Property			plads,  graduering,  kvalitet,  adelsmærke	{art_1; form_1; kategori_1; slags_1; sort,1_2; type_1}		1	betegne						1		
 3	1	2	A	1	sb.	1003				3	0	SN			SN			Event+Phenomenal			tone,  G	{tone,1_1}			tone						1		
 7	2	4	insekt	1	sb.	1004				1	1	SN			SN			Animal+Object			kryb, dyr	{leddyr_1}		-1	leddyr	en kollokation		med encykl.			1		
 8	2	1	insekt	1	sb.	1005		fx flue, bille eller lignende	zool.	1.a	0	SN			SN			Animal+Object			edderkop, kryb, spindler	{dyr_1}			dyr			med encykl.			2		
-9	2	1	insekt	1	sb.	1006			ofø	1.b	0	SN			SN			LanguageRepresentation+Artifact+Object			idiot	"{skældsord_1; ukvemsord_1}"		-1	skældsord						2		
+9	2	1	insekt	1	sb.	1006			ofø	1.b	0	SN			SN			LanguageRepresentation+Artifact+Object			idiot	{skældsord_1; ukvemsord_1}		-1	skældsord						2		
 10	2	5	insekt	1	sb.	1007			slang	2	0	SN			SN			Experience+Mental			fejl	"{skyld_2_1; skyldfølelse_1}"			skyld						1		
 11	3	1	kat		sb.	1008				1	1	SN			SN			Animal+Object			hund, kanin	{kattedyr_1}			pattedyr						1		
 12	3	2	kat		sb.	1009			"ofø; nedsættende el. spøgende"	1.a	0	SN			SN			Human+Object			fjog, original	"{hoved_3; individ_1; mand_3; menneske_1_1; person_1; m/k'er_0}"		-1	person						2		
-13	4	2	stor		adj.	1010				1	1	SN			SN			Property			kæmpe, høj	"{beskaffenhed_1; egenskab_1; side_7_1}"			st�rrelse						1		
-14	4	1	stor		adj.	1011				1.a	1	SN			SN			Property			overdreven, ekstrem	"{beskaffenhed_1; egenskab_1; side_7_1}"		-1	k�mpe						2		
+13	4	2	stor		adj.	1010				1	1	SN			SN			Property			kæmpe, høj	{beskaffenhed_1; egenskab_1; side_7_1}			størrelse						1		
+14	4	1	stor		adj.	1011				1.a	1	SN			SN			Property			overdreven, ekstrem	"{beskaffenhed_1; egenskab_1; side_7_1}"		-1	kæmpe						2		
 15	5	11	mus		sb.	1012				1	1	SN			SN			Animal+Object			rotte, marsvin	{dyr_1}			dyr	en kollokation					1		
 16	5	1	mus		sb.	1013				2	0	SN			SN			Artifact+Object+Instrument			tastatur, computer, musearm	{redskab_1}			redskab						1		
 17	6	4	hoppe		vb.	1014				1	1	SN			SN			Act+Phycial			bevæge sig, ryge i vejret, snurre rundt, gøre et hop	{optage_2_1}	Body_movement		opsuge						1		
