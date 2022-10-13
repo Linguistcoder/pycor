@@ -41,20 +41,20 @@ The config file is split into two parts:
 ```
 "datasets": [
     {
-      "name": "test",
-      "file": "data/hum_anno/test_data.txt",
-      "quote": "data/citat/citater_test_ren.tsv",
-      "sample_size": 0.5,
-      "bias": 0
+      "name": "test",  # name of dataset
+      "file": "data/hum_anno/test_data.txt",  # input file
+      "quote": "data/citat/citater_test_ren.tsv",  # quote file
+      "sample_size": 0.5,   # if sampling, the size of test set
+      "bias": 0 
     }
   ]
   ```
 2. models that are used for calculating scores
 ```
   "models": {
-    "bert_name":  "Maltehb/danish-bert-botxo",
-    "bert_checkpoint": "pycor/models/checkpoints/model_0.pt",
-    "save_path": "var/"
+    "bert_name":  "Maltehb/danish-bert-botxo",  # name of bert model on HuggingFace
+    "bert_checkpoint": "pycor/models/checkpoints/model_0.pt",  path to checkpoint
+    "save_path": "var/"  where to save processed files
   }
   ```
 
