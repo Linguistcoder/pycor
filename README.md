@@ -68,14 +68,14 @@ The script requires the argument `config_path` which should be the path to a con
 
 The script is run in the command line:
 ```
-pycor/ python generate_datasets.py -s /data -e /data -f /data configs/config_test.json
+pycor/ python generate_datasets.py -s data -e data -f data configs/config_test
 ```
 
 ### cluster_and_evaluate.py
 ```
-pycor python cluster_and_evaluate.py base mellem_test -t mellem_train -b 0.5
+pycor python cluster_and_evaluate.py base test_test -t test_train -b 0.5
 ```
 
-###
+### machine_anno
 
 [COR project]: <https://cst.ku.dk/english/projects/the-central-word-register-for-danish-cor/>

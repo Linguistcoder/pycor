@@ -1,6 +1,6 @@
 import pathlib
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict
 
 import dacite
 
@@ -11,14 +11,15 @@ import pycor
 class Configuration:
     datasets: pycor.load_annotations.config.Configuration
     models: Optional[pycor.models.config.Configuration]
+    fagspec: Optional[Dict]
+    sprogbrug: Optional[Dict]
 
 
 converters = {
     pathlib.Path: pathlib.Path,
     int: int,
     float: float,
-    pycor.models.config.ClusteringConfig: pycor.models.config.ClusteringConfig,
-    str: str.lower
+    pycor.models.config.ClusteringConfig: pycor.models.config.ClusteringConfig
 }
 
 

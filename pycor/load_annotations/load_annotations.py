@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import Configuration
+from pycor.config import Configuration
 from pycor.utils.preprocess import remove_special_char
 from typing import Optional, List
 import random

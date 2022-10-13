@@ -1,6 +1,6 @@
 import pathlib
 from dataclasses import dataclass
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 
 
 class ClusteringConfig(object):
@@ -43,7 +43,7 @@ class ClusteringConfig(object):
 
 @dataclass
 class Configuration:
-    base: Optional[str]
+    base: Optional[Dict]
     bert_name: Optional[str]
     bert_checkpoint: Optional[pathlib.Path]
     word2vec: Optional[pathlib.Path]

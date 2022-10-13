@@ -4,7 +4,7 @@ from typing import List, Dict, Optional
 
 import torch
 
-from config import load_config_from_json
+from pycor.config import load_config_from_json
 from pycor.load_annotations.config import Configuration
 from pycor.load_annotations.datasets import DataSet
 from pycor.load_annotations.load_annotations import create_or_sample_datasets

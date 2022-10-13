@@ -7,7 +7,7 @@ import pathlib
 class DatasetConfig:
     name: str
     file: pathlib.Path
-    quote: pathlib.Path
+    quote: Optional[pathlib.Path]
     sample_size: Optional[float]
     bias: Optional[int]
     subsample_size: Optional[float]

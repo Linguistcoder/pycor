@@ -2,16 +2,10 @@
   "datasets": [{
     "name": "udtraek_9_autoannoteret",
     "file": "data/no_anno/test_1.txt"
-  }]
-
-    "model_paths": {
-    "bert": "/content/drive/MyDrive/SPECIALE/Models/bert_model_0.pt",
-    "word2vec": "/content/drive/MyDrive/SPECIALE/Models/dsl_word2vec/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors",
-    "save_path": "/content/drive/MyDrive/SPECIALE/Models/"
-  },
-    "model_paths2": {
-    "bert": "pycor/models/checkpoints/model_0.pt",
-    "word2vec": "data/dsl_skipgram_2020_m5_f500_epoch2_w5.model.txtvectors",
+  }],
+    "models": {
+    "base": {"onto": 1, "main": 1, "fig": 0},
+    "bert_name": "Maltehb/danish-bert-botxo",
     "save_path": "var/"
   },
   "fagspec": {
