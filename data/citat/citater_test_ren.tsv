@@ -1,0 +1,17 @@
+	index	citat	ddo_dannetsemid	ddo_entryid	ddo_lemma	ddo_homnr	ddo_ordklasse	ddo_betyd_nr
+0	0	et citat for [TGT] a [TGT]	1001	1	A	1.0	sb.	1
+1	1	endnu et citat for [TGT] a [TGT]	1002	1	A	1.0	sb.	2
+2	2	et tredje citat for [TGT] a [TGT]	1003	1	A	1.0	sb.	3
+3	3	[TGT] insekter [TGT] er klamme	1004	2	insekt	1.0	sb.	1
+4	4	et [TGT] insekt [TGT] er et leddyr	1005	2	insekt	1.0	sb.	1.a
+5	5	du er sådan et klamt [TGT] insekt [TGT]	1006	2	insekt	1.0	sb.	1.b
+6	6	han sendte [TGT] insektet [TGT] videre til hans bror	1007	2	insekt	1.0	sb.	2
+7	7	[TGT] katten [TGT] siger miav	1008	3	kat		sb.	1
+8	8	det er blevet populært at have [TGT] kat [TGT]	1008	3	kat		sb.	1
+9	9	den dumme [TGT] kat [TGT] sikke en idot	1009	3	kat		sb.	1.a
+10	10	den grimme søster var så fysisk [TGT] stor [TGT]	1010	4	stor		adj.	1
+11	11	det er så [TGT] stort [TGT] hvad der bruges af midler til staten	1011	4	stor		adj.	1.a
+12	12	katte kan godt lide at fange [TGT] mus [TGT]	1012	5	mus		sb.	1
+13	13	det er altid nemmere at bruge en computer når man har en ordentlig [TGT] mus [TGT]	1013	5	mus		sb.	2
+14	14	han [TGT] hopper [TGT] altid for meget	1014	6	hoppe		vb.	1
+15	15	[TGT] hop [TGT] lige derhen sagde hun mens hun pegede på sandkassen	1015	6	hoppe		vb.	1.a
